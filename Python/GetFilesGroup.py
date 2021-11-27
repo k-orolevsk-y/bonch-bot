@@ -18,8 +18,8 @@ if len(args) < 3:
 
 chrome_options = Options()
 chrome_options.add_argument("--incognito")
-# chrome_options.add_argument("--headless")
-# chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument("--headless")
+chrome_options.add_argument('--no-sandbox')
 
 driver = webdriver.Chrome(webdriver_path, options=chrome_options)
 driver.get("https://lk.sut.ru/")
