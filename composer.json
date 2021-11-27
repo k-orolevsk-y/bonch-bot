@@ -1,0 +1,15 @@
+{
+    "name": "k-orolevsk-y/bonchbot",
+    "type": "project",
+    "require": {
+        "gabordemooij/redbean": "^5.7",
+        "vkcom/vk-php-sdk": "^5.101"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "k-orolevsk-y",
+            "email": "i@korolevsky.me"
+        }
+    ]
+}
