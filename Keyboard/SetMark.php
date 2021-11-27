@@ -23,15 +23,6 @@
 			}
 			$type = json_decode($user['settings'], true)['type_marking'] == 0 ? "carousel" : "keyboard";
 
-			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [ $object['user_id'], 'schedule-'.date('d.m.Y') ]);
-			if($cache == null) {
-				$vkApi->sendMessage("📛 Нет возможности проверить достоверность данных, вызовите список отметок заново.", [
-					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Вызвать","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking\" }"},"color":"negative"}]],"inline":true}'
-				]);
-				return false;
-			}
-			$data = json_decode($cache['data'], true);
-
 			if($payload['date'] != date('d.m.Y') && $payload['date'] != date('d.m.Y', strtotime('+1 day'))) {
 				$vkApi->get("messages.sendMessageEventAnswer", [
 					'peer_id' => $object['peer_id'],
@@ -41,6 +32,15 @@
 				]);
 				return false;
 			}
+
+			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [ $object['user_id'], 'schedule-'.$payload['date'] ]);
+			if($cache == null) {
+				$vkApi->sendMessage("📛 Нет возможности проверить достоверность данных, вызовите список отметок заново.", [
+					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Вызвать","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking\" }"},"color":"negative"}]],"inline":true}'
+				]);
+				return false;
+			}
+			$data = json_decode($cache['data'], true);
 
 			$nums_with_dates = array_column($data['items'], 'num_with_time');
 			if(!in_array($payload['num_with_time'], $nums_with_dates)) {

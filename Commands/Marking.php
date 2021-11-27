@@ -105,7 +105,7 @@
 					} else {
 						$time = strtotime(date('d.m.Y '.explode('-', $item['num_with_time'])[1]));
 					}
-					$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], date('d.m.Y') ]);
+					$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], $date ]);
 
 					if($time < time()) {
 						$carousel['elements'][] = [
@@ -173,13 +173,14 @@
 				} else {
 					$time = strtotime(date('d.m.Y '.explode('-', $item['num_with_time'])[1]));
 				}
-				$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], date('d.m.Y') ]);
+				$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], $date ]);
+				$name = @iconv_strlen($item['name']) >= 40 ? mb_substr($item['name'], 0, 36) . "..." : $item['name'];
 
 				if($time < time()) {
 					$keyboard['buttons'][][] = [
 						'action' => [
 							'type' => 'callback',
-							'label' => $item['name'],
+							'label' => $name,
 							'payload' => json_encode([ 'command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id ])
 						],
 						'color' => $schedule['status'] == 1000 ? 'primary' : 'secondary'
@@ -188,7 +189,7 @@
 					$keyboard['buttons'][][] = [
 						'action' => [
 							'type' => 'callback',
-							'label' => $item['name'],
+							'label' => $name,
 							'payload' => json_encode([ 'command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'update' => $conversation_message_id, 'date' => $date ])
 						],
 						'color' => 'positive'
@@ -197,7 +198,7 @@
 					$keyboard['buttons'][][] = [
 						'action' => [
 							'type' => 'callback',
-							'label' => $item['name'],
+							'label' => $name,
 							'payload' => json_encode([ 'command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id ])
 						],
 						'color' => 'secondary'
@@ -206,7 +207,7 @@
 					$keyboard['buttons'][][] = [
 						'action' => [
 							'type' => 'callback',
-							'label' => $item['name'],
+							'label' => $name,
 							'payload' => json_encode($schedule['status'] == 1000 ? [ 'command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id ] : [ 'command' => 'del_mark', 'mark_id' => $schedule['id'], 'update' => $conversation_message_id, 'date' => $date ])
 						],
 						'color' => $schedule['status'] == 1000 ? 'primary' : 'negative'

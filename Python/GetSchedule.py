@@ -48,33 +48,44 @@ time.sleep(0.5)
 driver.find_element(value='//*[@title="Расписание"]', by=By.XPATH).click()
 time.sleep(1.5)
 
-table = driver.find_element(value='//table[@class="simple-little-table"]/tbody', by=By.XPATH).find_elements(value='tr', by=By.XPATH)
+week = 0
 date_is_fined = False
 result = []
 
-for tr in table:
-    try:
-        is_date = tr.get_attribute('style') == 'background: rgb(179, 179, 179);'
-        if is_date:
+
+while week < 2:
+    table = driver.find_element(value='//table[@class="simple-little-table"]/tbody', by=By.XPATH).find_elements(
+        value='tr', by=By.XPATH)
+    for tr in table:
+        try:
+            is_date = tr.get_attribute('style') == 'background: rgb(179, 179, 179);'
+            if is_date:
+                if date_is_fined:
+                    break
+
+                date = tr.text.split('\n')[1]
+                if date == current_date:
+                    date_is_fined = True
+                    continue
+
             if date_is_fined:
-                break
+                tds = tr.find_elements(value='td', by=By.TAG_NAME)
+                result.append({
+                    'num_with_time': tds[0].text,
+                    'name': tds[1].text.split('\n')[0],
+                    'type': tds[1].text.split('\n')[1],
+                    'place': tds[2].text,
+                    'teacher': tds[3].text
+                })
+        except NoSuchElementException:
+            continue
 
-            date = tr.text.split('\n')[1]
-            if date == current_date:
-                date_is_fined = True
-                continue
-
-        if date_is_fined:
-            tds = tr.find_elements(value='td', by=By.TAG_NAME)
-            result.append({
-                'num_with_time': tds[0].text,
-                'name': tds[1].text.split('\n')[0],
-                'type': tds[1].text.split('\n')[1],
-                'place': tds[2].text,
-                'teacher': tds[3].text
-            })
-    except NoSuchElementException:
-        continue
+    if not date_is_fined:
+        week += 1
+        driver.find_element(value='//*[@id="rightpanel"]/a[7]', by=By.XPATH).click()
+        time.sleep(1)
+    else:
+        break
 
 driver.quit()
 print(ujson.encode({'date': current_date, 'count': len(result), 'items': result}))
