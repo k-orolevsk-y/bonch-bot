@@ -51,7 +51,9 @@ try:
     WebDriverWait(driver, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="rightpanel"]/form/input'))).click()
 except Exception as e:
     print("exception:" + e)  #!Обработчик ошибок у тебя свой вроде бы
+    driver.quit()
 finally:
     print("успешно") # мб юзеру написать, что через 3 рабочих дня готово будет, не забудь забрать
+    driver.quit()
 
 
