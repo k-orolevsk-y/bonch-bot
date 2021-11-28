@@ -101,9 +101,9 @@
 				foreach($data['items'] as $item) {
 					$exp = explode(' ', $item['num_with_time']);
 					if(count($exp) > 1) {
-						$time = strtotime(date('d.m.Y '.explode('-', str_replace(['(', ')', ':'], ['','','.'], $exp[1]))[1]));
+						$time = strtotime($date.' '.explode('-', str_replace(['(', ')', ':'], ['','','.'], $exp[1]))[1]);
 					} else {
-						$time = strtotime(date('d.m.Y '.explode('-', $item['num_with_time'])[1]));
+						$time = strtotime($date.' '.explode('-', $item['num_with_time'])[1]);
 					}
 					$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], $date ]);
 
@@ -169,9 +169,9 @@
 			foreach($data['items'] as $item) {
 				$exp = explode(' ', $item['num_with_time']);
 				if(count($exp) > 1) {
-					$time = strtotime(date('d.m.Y '.explode('-', str_replace(['(', ')', ':'], ['','','.'], $exp[1]))[1]));
+					$time = strtotime($date.' '.explode('-', str_replace(['(', ')', ':'], ['','','.'], $exp[1]))[1]);
 				} else {
-					$time = strtotime(date('d.m.Y '.explode('-', $item['num_with_time'])[1]));
+					$time = strtotime($date.' '.explode('-', $item['num_with_time'])[1]);
 				}
 				$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], $date ]);
 				$name = @iconv_strlen($item['name']) >= 40 ? mb_substr($item['name'], 0, 36) . "..." : $item['name'];
