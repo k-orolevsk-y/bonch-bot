@@ -4,15 +4,9 @@ import ujson
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-<<<<<<< HEAD
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException
-=======
-from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait, Select
->>>>>>> origin/master
 
 webdriver_path = "/usr/lib/chromium-browser/chromedriver"
 args = ujson.decode(" ".join(sys.argv[1:]).replace('\'', '"'))
