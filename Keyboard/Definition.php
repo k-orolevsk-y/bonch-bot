@@ -31,6 +31,8 @@
 				case "eval":
 					$object['text'] = $payload['cmd'];
 					return new DefinitionCommands($api, $object);
+				case "start":
+					return new Start($api, $object, $payload);
 				case "set_mark":
 					return new SetMark($api, $object, $payload);
 				case "del_mark":
@@ -39,8 +41,12 @@
 					return new Settings($api, $object, $payload);
 				case "set_settings":
 					return new SetSettings($api, $object, $payload);
-				case "start":
-					return new Start($api, $object, $payload);
+				case "cancel":
+					return new Cancel($api, $object, $payload);
+				case "order":
+					return new Order($api, $object, $payload);
+				case "order_confirm":
+					return new OrderConfirm($api, $object, $payload);
 			}
 		}
 

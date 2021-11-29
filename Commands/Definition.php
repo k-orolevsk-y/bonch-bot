@@ -36,6 +36,9 @@
 				case "/messages":
 				case "/сообщения":
 					return new Messages($api, $object);
+				case "/order":
+				case "/заказ":
+					return new Order($api, $object);
 				case "/help":
 				case "/помощь":
 				case "/справка":

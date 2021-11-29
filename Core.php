@@ -6,6 +6,7 @@
 	use Me\Korolevsky\BonchBot\Handlers\NewPost;
 	use Me\Korolevsky\BonchBot\Commands\Definition;
 	use VK\CallbackApi\Server\VKCallbackApiServerHandler;
+	use Me\Korolevsky\BonchBot\Actions\Definition as DefinitionActions;
 	use Me\Korolevsky\BonchBot\Handlers\Definition as DefinitionHandlers;
 	use Me\Korolevsky\BonchBot\Keyboard\Definition as DefinitionKeyboard;
 
@@ -64,6 +65,14 @@
 			new DefinitionHandlers($api, $object);
 			if($payload != null) {
 				new DefinitionKeyboard($api, $object, $payload);
+				$api->end();
+			}
+
+			$payload_reply_message = json_decode(((array)$obj['reply_message'])['payload'], true);
+			if($payload_reply_message['action'] != null) {
+				$payload_reply_message['reply_message_id'] = $obj['reply_message']->conversation_message_id;
+				new DefinitionActions($api, $obj, $payload_reply_message);
+
 				$api->end();
 			}
 

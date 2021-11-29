@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException
 
 webdriver_path = "/usr/lib/chromium-browser/chromedriver"
-args = ujson.decode(" ".join(sys.argv[1:]).replace('\'', '"'))
+args = ujson.decode(sys.argv[1])
 
 need_args = ['login', 'pass', 'why', 'goal']
 for arg in need_args:
@@ -50,9 +50,8 @@ try:
         Select(WebDriverWait(driver, 1).until(
             EC.visibility_of_element_located((By.XPATH, '//*[@id="org"]')))).select_by_visible_text(args['why'])
     if args['goal'] != "":
-        WebDriverWait(driver, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="cel"]'))).send_keys(
-            args['goal'])
-    WebDriverWait(driver, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="rightpanel"]/form/input'))).click()
+        WebDriverWait(driver, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="cel"]'))).send_keys(args['goal'])
+    # WebDriverWait(driver, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="rightpanel"]/form/input'))).click()
 except Exception as e:
     driver.quit()
     print(-1)

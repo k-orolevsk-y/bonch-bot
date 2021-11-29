@@ -75,7 +75,7 @@
 			}
 		}
 
-		public function editMessage(string $message, int $conversation_message_id, int $peer_id, ?array $params = []): mixed {
+		public function editMessage(string $message, int $conversation_message_id, int $peer_id, ?array $params = [], bool $exception_handler_need = true): mixed {
 			$access_token = $access_token ?? $this->access_token;
 			$params['conversation_message_id'] = $conversation_message_id;
 			$params['peer_id'] = $peer_id;
@@ -86,12 +86,16 @@
 			try {
 				return $this->client->messages()->edit($access_token, $params);
 			} catch(Exception) {
-				$params['forward'] = [ 'is_reply' => true, 'peer_id' => $params['peer_id'], 'conversation_message_ids' => [$params['conversation_message_id']]  ];
-				$message = $params['message'];
-				unset($params['conversation_message_id']);
-				unset($params['message']);
+				if($exception_handler_need) {
+					$params['forward'] = ['is_reply' => true, 'peer_id' => $params['peer_id'], 'conversation_message_ids' => [$params['conversation_message_id']]];
+					$message = $params['message'];
+					unset($params['conversation_message_id']);
+					unset($params['message']);
 
-				return $this->sendMessage($message, $params, $access_token);
+					return $this->sendMessage($message, $params, $access_token);
+				} else {
+					return null;
+				}
 			}
 		}
 
