@@ -45,7 +45,7 @@
 
 		#[NoReturn]
 		private function start() {
-			if(date('h') > 8) {
+			if(date('H') > 8) {
 				$date = date('d.m.Y', strtotime('+1 day'));
 			} else {
 				$date = date('d.m.Y');
