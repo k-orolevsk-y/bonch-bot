@@ -51,7 +51,7 @@ try:
             EC.visibility_of_element_located((By.XPATH, '//*[@id="org"]')))).select_by_visible_text(args['why'])
     if args['goal'] != "":
         WebDriverWait(driver, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="cel"]'))).send_keys(args['goal'])
-    # WebDriverWait(driver, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="rightpanel"]/form/input'))).click()
+    WebDriverWait(driver, 1).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="rightpanel"]/form/input'))).click()
 except Exception as e:
     driver.quit()
     print(-1)
