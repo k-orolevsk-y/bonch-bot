@@ -60,7 +60,7 @@
 			}
 
 			try {
-				$address = $vkApi->get("docs.getMessagesUploadServer", ['peer_id' => 171812976, 'type' => 'doc'])['response']['upload_url'];
+				$address = $vkApi->get("docs.getMessagesUploadServer", ['peer_id' => $object['peer_id'], 'type' => 'doc'])['response']['upload_url'];
 				if($address == null) {
 					throw new Exception(code: 0);
 				}
@@ -68,7 +68,7 @@
 				if($uploaded_doc == null) {
 					throw new Exception(code: 1);
 				}
-				$document = $vkApi->get("docs.save", [ 'file' => $uploaded_doc, 'title' => "Оценки пользователя ${object['from_id']} от " . date('d.m.Y H:i') ])['response']['doc'];
+				$document = $vkApi->get("docs.save", ['file' => $uploaded_doc, 'title' => "Оценки пользователя ${object['from_id']} от " . date('d.m.Y H:i')])['response']['doc'];
 				if($document == null) {
 					throw new Exception(code: 1);
 				}
