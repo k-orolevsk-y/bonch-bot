@@ -52,6 +52,7 @@
 				$vkApi->editMessage("📘 Получаю скриншот из ЛК...", $conversation_message_id, $object['peer_id']);
 			}
 
+			$api->end(true);
 			$data = json_decode(exec("python3.9 Python/GetMarks.py $login $pass"), true);
 			if($data['error'] || $data == null) {
 				$vkApi->editMessage("❌ Не удалось создать скриншот оценок.", $conversation_message_id, $object['peer_id']);
@@ -59,7 +60,7 @@
 			}
 
 			try {
-				$address = $vkApi->get("docs.getMessagesUploadServer", [ 'peer_id' => 171812976, 'type' => 'doc' ])['response']['upload_url'];
+				$address = $vkApi->get("docs.getMessagesUploadServer", ['peer_id' => 171812976, 'type' => 'doc'])['response']['upload_url'];
 				if($address == null) {
 					throw new Exception(code: 0);
 				}
