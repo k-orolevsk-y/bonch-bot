@@ -3,6 +3,7 @@
 	error_reporting(0);
 
 	use Me\Korolevsky\BonchBot\Commands\Marking;
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
@@ -56,10 +57,11 @@
 				$settings = json_decode($user['settings'], true);
 				if(!$settings['send_notifications']) continue;
 
-				$login = openssl_decrypt(hex2bin($user['login']), 'AES-128-CBC', Data::ENCRYPT_KEY);
-				$pass = openssl_decrypt(hex2bin($user['password']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+				$lk = new LK($user['user_id']);
+				$auth = $lk->auth();
+				if($auth != 1) continue;
 
-				$schedule = json_decode(exec("python3.9 ../Python/GetSchedule.py $login $pass $date"), true);
+				$schedule = $lk->getSchedule($date);
 				if($schedule == null) continue;
 				elseif($schedule['count'] < 1) continue;
 

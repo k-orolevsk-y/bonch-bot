@@ -4,6 +4,7 @@
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use Me\Korolevsky\BonchBot\Interfaces\Command;
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 
 	class Marking implements Command {
@@ -11,7 +12,7 @@
 		public function __construct(Api $api, array $object) {
 			$vkApi = $api->getVkApi();
 			$msg = explode(' ', $object['text']);
-			$payload = (array) $object['payload'];
+			$payload = (array)$object['payload'];
 
 			if($object['from_id'] == null) {
 				$object['from_id'] = $object['user_id'];
@@ -38,9 +39,6 @@
 				return false;
 			}
 
-			$login = openssl_decrypt(hex2bin($user['login']),'AES-128-CBC', Data::ENCRYPT_KEY);
-			$pass = openssl_decrypt(hex2bin($user['password']),'AES-128-CBC', Data::ENCRYPT_KEY);
-
 			if($payload['update'] == null) {
 				$conversation_message_id = $vkApi->sendMessage("📘 Получение данных из ЛК...", [
 						'peer_ids' => $object['peer_id'],
@@ -51,20 +49,23 @@
 				$conversation_message_id = $payload['update'];
 			}
 
-			if(in_array(mb_strtolower($msg[1]), [ 'завтра', 'tomorrow' ])) {
+			if(in_array(mb_strtolower($msg[1]), ['завтра', 'tomorrow'])) {
 				$date = date('d.m.Y', strtotime("+1 day"));
 			} else {
 				$date = date('d.m.Y');
 			}
 
-			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [ $object['from_id'], "schedule-$date" ]);
-			if($cache == null || $msg[1] == 1) {
+			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [$object['from_id'], "schedule-$date"]);
+			if($cache == null || end($msg) == 1) {
 				if($cache != null) {
 					R::trash($cache);
 				}
 
-				$data = json_decode(exec("python3.9 Python/GetSchedule.py $login $pass $date"), true);
-				if($data == null) {
+				$lk = new LK($user['user_id']);
+				$lk->auth();
+				$data = $lk->getSchedule($date);
+
+				if($data === false) {
 					$vkApi->editMessage("❌ Не удалось получить данные из ЛК.", $conversation_message_id, $object['peer_id']);
 					return false;
 				}
@@ -81,8 +82,8 @@
 			if($data['count'] < 1) {
 				$today = $date == date('d.m.Y');
 
-				$vkApi->editMessage("😄 " . ($today ? "Сегодня" : "Завтра") . " ${data['date']} пар нет.", $conversation_message_id, $object['peer_id'], [
-					'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking'.(!$today ? " tomorrow" : "").'\", \"update\": '.$conversation_message_id.' }"},"color":"secondary"}]],"inline":true}'
+				$vkApi->editMessage("😄 " . ($today ? "Сегодня" : "Завтра") . " (${date}) пар нет.", $conversation_message_id, $object['peer_id'], [
+					'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking' . (!$today ? " tomorrow" : "") . ' 1\", \"update\": ' . $conversation_message_id . ' }"},"color":"secondary"}]],"inline":true}'
 				]);
 				return true;
 			}
@@ -112,12 +113,12 @@
 					if($time < time()) {
 						$carousel['elements'][] = [
 							'title' => $item['name'],
-							'description' => "${item['num_with_time']}\n${item['type']}",
+							'description' => "${item['num_with_time']}\n${item['type']} (${item['place']})",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
 									'label' => $schedule['status'] == 1000 ? 'Отметка уже поставлена' : 'Невозможно отметиться',
-									'payload' => json_encode([ 'command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id, ])
+									'payload' => json_encode(['command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id,])
 								],
 								'color' => $schedule['status'] == 1000 ? 'primary' : 'secondary'
 							]]
@@ -125,12 +126,12 @@
 					} elseif($schedule == null) {
 						$carousel['elements'][] = [
 							'title' => $item['name'],
-							'description' => "${item['num_with_time']}\n${item['type']}",
+							'description' => "${item['num_with_time']}\n${item['type']} (${item['place']})",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
 									'label' => 'Отметиться',
-									'payload' => json_encode([ 'command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'update' => $conversation_message_id, 'date' => $date ])
+									'payload' => json_encode(['command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'update' => $conversation_message_id, 'date' => $date])
 								],
 								'color' => 'positive'
 							]]
@@ -138,12 +139,12 @@
 					} elseif($schedule['status'] == -1) {
 						$carousel['elements'][] = [
 							'title' => $item['name'],
-							'description' => "${item['num_with_time']}\n${item['type']}",
+							'description' => "${item['num_with_time']}\n${item['type']} (${item['place']})",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
 									'label' => 'Невозможно отметиться',
-									'payload' => json_encode([ 'command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id ])
+									'payload' => json_encode(['command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id])
 								],
 								'color' => 'secondary'
 							]]
@@ -151,12 +152,12 @@
 					} else {
 						$carousel['elements'][] = [
 							'title' => $item['name'],
-							'description' => "${item['num_with_time']}\n${item['type']}",
+							'description' => "${item['num_with_time']}\n${item['type']} (${item['place']})",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
 									'label' => $schedule['status'] == 1000 ? 'Отметка уже поставлена' : 'Не отмечать',
-									'payload' => json_encode($schedule['status'] == 1000 ? [ 'command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id ] : [ 'command' => 'del_mark', 'mark_id' => $schedule['id'], 'update' => $conversation_message_id, 'date' => $date ])
+									'payload' => json_encode($schedule['status'] == 1000 ? ['command' => 'eval', 'cmd' => '/marking', 'update' => $conversation_message_id] : ['command' => 'del_mark', 'mark_id' => $schedule['id'], 'update' => $conversation_message_id, 'date' => $date])
 								],
 								'color' => $schedule['status'] == 1000 ? 'primary' : 'negative'
 							]]

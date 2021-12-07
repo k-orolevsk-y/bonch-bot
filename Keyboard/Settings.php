@@ -23,7 +23,7 @@
 			$settings = json_decode($user['settings'], true);
 
 			$vkApi->editMessage(
-				"⚙️ Настройки:\n\n• Тип ответа сообщений в отметках: " . ($settings['type_marking'] == 0 ? "карусель" : "клавиатура") . "\n• Рассылка при начале занятия и утром: " . (!$settings['send_notifications'] ? "отключена" : "включена") . "\n• Рассылка о новых записях: " . (!$settings['mailing'] ? "отключена" : "включена"),
+				"⚙️ Настройки:\n\n• Тип ответа сообщений в отметках: " . ($settings['type_marking'] == 0 ? "карусель" : "клавиатура") . "\n• Рассылка о занятиях: " . (!$settings['send_notifications'] ? "отключена" : "включена") . "\n• Рассылка о новых записях: " . (!$settings['mailing'] ? "отключена" : "включена") . "\n• Уведомления о новых сообщениях: " . (!$settings['new_messages'] ? "отключены" : "включены"),
 				$object['conversation_message_id'], $object['peer_id'],
 				[
 					'keyboard' =>
@@ -52,9 +52,17 @@
 							       "action": {
 							         "type": "callback",
 							         "label": "Новые записи",
-							         "payload": "{ \"command\": \"set_settings\", \"key\": \"mailing\", \"value\": '.intval(!$settings['mailing']).' }"
+							         "payload": "{ \"command\": \"set_settings\", \"key\": \"mailing\", \"value\": ' . intval(!$settings['mailing']) . ' }"
 							       },
-							       "color": "'.($settings['mailing'] ? 'positive' : 'negative').'"
+							       "color": "' . ($settings['mailing'] ? 'positive' : 'negative') . '"
+							     },
+							     {
+							       "action": {
+									"type": "callback",
+							         "label": "Новые сообщения",
+							         "payload": "{ \"command\": \"set_settings\", \"key\": \"new_messages\", \"value\": ' . intval(!$settings['new_messages']) . ' }"
+							       },
+							       "color": "' . ($settings['new_messages'] ? 'positive' : 'negative') . '"
 							     }
 							   ],
 							   [

@@ -23,6 +23,7 @@
 				case "/отвязать":
 					return new UnBind($api, $object);
 				case "/info":
+				case "/profile":
 				case "/инфо":
 				case "/профиль":
 					return new Info($api, $object);

@@ -1,6 +1,7 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Commands;
 
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
@@ -22,7 +23,7 @@
 			$db = R::findOne('users', 'WHERE `user_id` = ?', [ $object['from_id'] ]);
 			if($db != null) {
 				$vkApi->sendMessage("📛 У Вас уже привязаны данные от ЛК.", [
-						'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Отвязать","payload":"{ \"command\": \"eval\", \"cmd\": \"/unbind\" }"},"color":"negative"}]],"inline":true}'
+					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Отвязать","payload":"{ \"command\": \"eval\", \"cmd\": \"/unbind\" }"},"color":"negative"}]],"inline":true}'
 				]);
 				$vkApi->get('messages.delete', [ 'peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']] ]);
 				return true;
@@ -68,11 +69,16 @@
 			$db['user_id'] = $object['from_id'];
 			$db['group_id'] = $group_id;
 			$db['time'] = time();
-			$db['login'] = bin2hex(openssl_encrypt($login,'AES-128-CBC', Data::ENCRYPT_KEY));
-			$db['password'] = bin2hex(openssl_encrypt($password,'AES-128-CBC', Data::ENCRYPT_KEY));
+			$db['login'] = bin2hex(openssl_encrypt($login, 'AES-128-CBC', Data::ENCRYPT_KEY));
+			$db['password'] = bin2hex(openssl_encrypt($password, 'AES-128-CBC', Data::ENCRYPT_KEY));
 			$db['data'] = $attempt;
-			$db['settings'] = json_encode([ 'type_marking' => 0, 'send_notifications' => 1, 'mailing' => 1 ]);
+			$db['settings'] = json_encode(['type_marking' => 0, 'send_notifications' => 1, 'mailing' => 1, 'new_messages' => 1]);
 			R::store($db);
+
+			// Прочитаем все новые сообщения из ЛК, чтобы бот не проспамил об этом после привязки.
+			$lk = new LK($object['from_id']);
+			$lk->auth();
+			$lk->getNewMessages();
 
 			$vkApi->editMessage("✅ Авторизация в ЛК прошла успешно, данные записаны.", $conversation_message_id, $object['peer_id']);
 			return true;
