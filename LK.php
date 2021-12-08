@@ -133,34 +133,50 @@
 		}
 
 		public function getMessages(): array|null {
-			$messages = $this->request("message");
-
-			$doc = new DOMDocument();
-			$doc->loadHTML($messages);
-			$xpath = new DOMXPath($doc);
-
-			$table = $xpath->query('//*[@id="mytable"]/tbody/tr');
 			$response = [];
+			$params = ['type' => 'in', 'page' => 1];
 
-			foreach($table as $tr) {
-				$id = str_replace('tr_', '', $tr->getAttribute('id'));
-				if(str_starts_with($id, "show_")) continue;
-
-				$tds = $tr->getElementsByTagName('td');
-				$files = [];
-
-				foreach($tds[2]->getElementsByTagName('a') as $file) {
-					$files[] = $file->getAttribute('href');
+			while(true) {
+				$messages = $this->request("message", $params);
+				if(strpos($messages, "Сообщений не найдено")) {
+					if($params['type'] == 'in') {
+						$params = [
+							'type' => 'out',
+							'page' => 1
+						];
+						continue;
+					} else {
+						break;
+					}
 				}
 
-				$response[] = [
-					'id' => (int)$id,
-					'time' => strtotime($tds[0]->textContent),
-					'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
-					'text' => strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation']),
-					'files' => $files,
-					'sender' => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent))
-				];
+				$doc = new DOMDocument();
+				$doc->loadHTML($messages);
+				$xpath = new DOMXPath($doc);
+
+				$table = $xpath->query('//*[@id="mytable"]/tbody/tr');
+				foreach($table as $tr) {
+					$id = str_replace('tr_', '', $tr->getAttribute('id'));
+					if(str_starts_with($id, "show_")) continue;
+
+					$tds = $tr->getElementsByTagName('td');
+					$files = [];
+
+					foreach($tds[2]->getElementsByTagName('a') as $file) {
+						$files[] = $file->getAttribute('href');
+					}
+
+					$response[] = [
+						'id' => (int)$id,
+						'time' => strtotime($tds[0]->textContent),
+						'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
+						'text' => strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation']),
+						'files' => $files,
+						str_replace(['in', 'out'], ['sender', 'receiver'], $params['type']) => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent))
+					];
+				}
+
+				$params['page'] += 1;
 			}
 
 			return $response;

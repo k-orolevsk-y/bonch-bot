@@ -1,8 +1,8 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Commands;
 
-	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
+	use Me\Korolevsky\BonchBot\LK;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use Me\Korolevsky\BonchBot\Interfaces\Command;

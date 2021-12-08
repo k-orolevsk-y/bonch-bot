@@ -1,13 +1,12 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Handlers;
-	error_reporting(0);
 
-	use Me\Korolevsky\BonchBot\Commands\Marking;
-	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
+	use Me\Korolevsky\BonchBot\LK;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use JetBrains\PhpStorm\NoReturn;
+	use Me\Korolevsky\BonchBot\Commands\Marking;
 
 	class Notification {
 
@@ -26,6 +25,7 @@
 
 		#[NoReturn]
 		private function autoload() {
+			require '../LK.php';
 			require '../Api.php';
 			require '../Data.php';
 			require '../VKApi.php';

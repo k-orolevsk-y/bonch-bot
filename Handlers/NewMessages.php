@@ -3,12 +3,11 @@
 	namespace Me\Korolevsky\BonchBot\Handlers;
 	error_reporting(0);
 
+	use RedBeanPHP\R;
+	use Me\Korolevsky\BonchBot\LK;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use JetBrains\PhpStorm\NoReturn;
-	use Me\Korolevsky\BonchBot\LK;
-	use RedBeanPHP\R;
-
 
 	class NewMessages {
 

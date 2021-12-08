@@ -11,7 +11,6 @@
 
 		private Api $api;
 		private array $schedule;
-		private array $notifications = [];
 
 		#[NoReturn]
 		public function __construct() {
@@ -21,7 +20,6 @@
 			self::getApi();
 			self::getSchedule();
 			self::start();
-			self::sendNotifications();
 		}
 
 		#[NoReturn]
@@ -95,13 +93,13 @@
 					continue;
 				} elseif($set_mark == -2) {
 					if($item['status'] == 2) {
-						$vkApi->sendMessage("⚙️ Отметиться на паре$schedule_name не удалось, будет ещё две попытки отметиться, если не получиться, я пришлю об этом сообщение в диалог.", [
+						$vkApi->sendMessage("⚙️ Отметиться на паре$schedule_name не удалось, будет ещё три попытки отметиться, если не получиться, я пришлю об этом сообщение в диалог.", [
 							'peer_id' => $user['user_id'], 'forward' => []
 						]);
 					}
 
 					$item['status'] += 1;
-					if($item['status'] > 4) {
+					if($item['status'] > 5) {
 						$vkApi->sendMessage("🚫 Не удалось отметиться на паре$schedule_name, скорее всего преподователь не начал занятие.", [
 							'peer_id' => $user['user_id'], 'forward' => []
 						]);
@@ -132,55 +130,9 @@
 				$item['status'] = 1000;
 				R::store($item);
 
-				self::addScheduleStarted($data, [ 'name' => $schedule_name, 'num_with_time' => $item['num_with_time'] ], intval($user['user_id']));
 				$vkApi->sendMessage("✅ Вы были отмечены на паре$schedule_name.", [
 					'peer_id' => $user['user_id'], 'forward' => []
 				]);
-			}
-		}
-
-		#[NoReturn]
-		private function addScheduleStarted(array $data, array $schedule, int $user) {
-			if($this->notifications[$data['group']] == null) {
-				$this->notifications[$data['group']] = [
-					'num_with_time' => $schedule['num_with_time'],
-					'schedule_name' => $schedule['name'],
-					'users' =>  array_merge(
-						[$user],
-						array_column(
-							R::getAll(
-								'SELECT * FROM `schedule` WHERE `date` = ? AND `num_with_time` = ?',
-								[ date('d.m.Y'), $schedule['num_with_time'] ]) ?? [],
-							'user_id'
-						)
-					)
-				];
-			} else {
-				$this->notifications[$data['group']]['users'][] = $user;
-			}
-		}
-
-		#[NoReturn]
-		private function sendNotifications() {
-			$users = R::getAll('SELECT * FROM `users`');
-			$notifications = $this->notifications;
-			$vkApi = $this->api->getVkApi();
-
-			foreach($users as $user) {
-				$settings = json_decode($user['settings'], true);
-				if(!$settings['send_notifications']) continue;
-
-				$data = json_decode($user['data'], true);
-				$notification = $notifications[$data['group']];
-
-				if($notification == null) continue;
-				elseif(in_array($user['user_id'], $notification['users'])) continue;
-
-//				$vkApi->sendMessage("📝 У Вас началась пара${notification['schedule_name']}!\nℹ️ Необходимо поставить отметку?\n\n🔕 Рассылку о новых парах можно отключить в профиле.", [
-//					'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Отметить","payload":"{\"command\": \"set_mark\", \"num_with_time\": \"'.$notification['num_with_time'].'\", \"date\": \"'.date('d.m.Y').'\"}"},"color":"positive"}]],"inline":true}',
-//					'peer_id' => $user['user_id'],
-//					'forward' => []
-//				]);
 			}
 		}
 
