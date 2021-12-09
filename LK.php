@@ -1,12 +1,11 @@
 <?php
-
 	namespace Me\Korolevsky\BonchBot;
 
-	use DOMDocument;
 	use DOMXPath;
 	use Exception;
-	use JetBrains\PhpStorm\ArrayShape;
+	use DOMDocument;
 	use RedBeanPHP\R;
+	use JetBrains\PhpStorm\ArrayShape;
 
 	class LK {
 
