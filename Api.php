@@ -58,12 +58,18 @@
 		}
 
 		protected function repetitionCheck(int $status): bool {
+			if($this->object['event_id'] != null) {
+				$conversation_message_id = $this->object['event_id'];
+			} else {
+				$conversation_message_id = $this->object['conversation_message_id'];
+			}
+
 			if($status == 0) {
-				$find = R::findOne('lm', 'WHERE `conversation_message_id` = ? AND `peer_id` = ? AND `completed` = ?', [ $this->object['conversation_message_id'], $this->object['peer_id'], 1 ]);
+				$find = R::findOne('lm', 'WHERE `conversation_message_id` = ? AND `peer_id` = ? AND `completed` = ?', [$conversation_message_id, $this->object['peer_id'], 1]);
 				if($find != null) die('ok');
 
 				$new = R::dispense('lm');
-				$new['conversation_message_id'] = $this->object['conversation_message_id'];
+				$new['conversation_message_id'] = $conversation_message_id;
 				$new['peer_id'] = $this->object['peer_id'];
 				$new['completed'] = 0;
 				R::store($new);
@@ -71,7 +77,7 @@
 				return true;
 			}
 
-			$end = R::findOne('lm', 'WHERE `conversation_message_id` = ? AND `peer_id` = ?', [ $this->object['conversation_message_id'], $this->object['peer_id'] ]);
+			$end = R::findOne('lm', 'WHERE `conversation_message_id` = ? AND `peer_id` = ?', [$conversation_message_id, $this->object['peer_id']]);
 			if($end == null) return true;
 
 			$end['completed'] = 1;

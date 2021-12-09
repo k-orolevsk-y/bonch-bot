@@ -47,6 +47,8 @@
 					return new Order($api, $object, $payload);
 				case "order_confirm":
 					return new OrderConfirm($api, $object, $payload);
+				case "get_messages":
+					return new GetMessages($api, $object, $payload);
 			}
 		}
 

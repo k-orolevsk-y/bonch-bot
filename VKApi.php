@@ -87,11 +87,12 @@
 				return $this->client->messages()->edit($access_token, $params);
 			} catch(Exception) {
 				if($exception_handler_need) {
-					$params['forward'] = ['is_reply' => true, 'peer_id' => $params['peer_id'], 'conversation_message_ids' => [$params['conversation_message_id']]];
+					$params['forward'] = [];
 					$message = $params['message'];
 					unset($params['conversation_message_id']);
 					unset($params['message']);
 
+					$this->get("messages.delete", ['peer_id' => $peer_id, 'conversation_message_ids' => [$conversation_message_id], 'delete_for_all' => 1]);
 					return $this->sendMessage($message, $params, $access_token);
 				} else {
 					return null;

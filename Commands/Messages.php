@@ -2,25 +2,20 @@
 	namespace Me\Korolevsky\BonchBot\Commands;
 
 
-	use Me\Korolevsky\BonchBot\Api;
-	use Me\Korolevsky\BonchBot\Data;
-	use Me\Korolevsky\BonchBot\Interfaces\Command;
 	use RedBeanPHP\R;
+	use Me\Korolevsky\BonchBot\LK;
+	use Me\Korolevsky\BonchBot\Api;
+	use Me\Korolevsky\BonchBot\Interfaces\Command;
 
 	class Messages implements Command {
 
 		public function __construct(Api $api, array $object) {
 			$vkApi = $api->getVkApi();
 			$msg = explode(' ', $object['text']);
-			$payload = (array) $object['payload'];
+			$payload = (array)$object['payload'];
 
 			if($object['from_id'] == null) {
 				$object['from_id'] = $object['user_id'];
-			}
-
-			if($object['from_id'] != 171812976) {
-				$vkApi->sendMessage("🚫 Нет доступа.");
-				return false;
 			}
 
 			if($object['peer_id'] > 2000000000) {
@@ -31,7 +26,7 @@
 				$forward = [];
 				$object['peer_id'] = $object['from_id'];
 			} else {
-				$forward = [ 'is_reply' => true, 'peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']]];
+				$forward = $msg[1] == "update" ? [] : ['is_reply' => true, 'peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']]];
 			}
 
 			$user = R::findOne('users', 'WHERE `user_id` = ?', [ $object['from_id'] ]);
@@ -44,22 +39,43 @@
 				return false;
 			}
 
-			$login = openssl_decrypt(hex2bin($user['login']),'AES-128-CBC', Data::ENCRYPT_KEY);
-			$pass = openssl_decrypt(hex2bin($user['password']),'AES-128-CBC', Data::ENCRYPT_KEY);
-
 			if($payload['update'] == null) {
-				$conversation_message_id = $vkApi->sendMessage("📘 Получаю сообщения из ЛК...", [
+				$conversation_message_id = $vkApi->sendMessage("🙈 Авторизируемся в ЛК.", [
 						'peer_ids' => $object['peer_id'],
 						'forward' => $forward
 					]
 				)[0]['conversation_message_id'];
 			} else {
 				$conversation_message_id = $payload['update'];
-				$vkApi->editMessage("📘 Получаю сообщения из ЛК...", $conversation_message_id, $object['peer_id']);
+				if($msg[1] == "update") {
+					$deleted = $vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']], 'delete_for_all' => 1]);
+					if(!$deleted['response'][$object['conversation_message_id']]) {
+						return false;
+					}
+
+					$conversation_message_id = $vkApi->sendMessage("🙈 Авторизируемся в ЛК.", [
+							'peer_ids' => $object['peer_id'],
+							'forward' => $forward
+						]
+					)[0]['conversation_message_id'];
+				} elseif(!is_numeric($msg[1])) {
+					$vkApi->editMessage("🙈 Авторизируемся в ЛК.", $conversation_message_id, $object['peer_id']);
+				}
 			}
 
-			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [ $object['from_id'], "messages" ]);
-			if($cache == null || $msg[1] == "update" || $cache['time'] < (time()-1800)) {
+			if($payload['delete_ids'] != null) {
+				$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => $payload['delete_ids'], 'delete_for_all' => 1]);
+			}
+
+			$lk = new LK($object['from_id']);
+			$auth = $lk->auth();
+
+			if($auth != 1) {
+				$vkApi->editMessage("⚠️ Авторизоваться в ЛК не удалось.", $conversation_message_id, $object['peer_id']);
+			}
+
+			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [$object['from_id'], "messages"]);
+			if($cache == null || $msg[1] == "update" || $cache['time'] < (time() - 1800)) {
 				if($cache != null) {
 					R::trash($cache);
 				}
@@ -67,7 +83,7 @@
 				$api->end(true);
 				$vkApi->editMessage("📘 Получаю сообщения из ЛК...\nℹ️ Это довольно затратная функция, получение сообщений происходит в течении 15 секунд.", $conversation_message_id, $object['peer_id']);
 
-				$data = json_decode(exec("python3.9 Python/GetMessages.py $login $pass"), true);
+				$data = $lk->getMessages();
 				if($data == null) {
 					$vkApi->editMessage("❌ Не удалось получить данные из ЛК.", $conversation_message_id, $object['peer_id']);
 					return false;
@@ -122,7 +138,7 @@
 					'action' => [
 						'type' => 'callback',
 						'label' => $name,
-						'payload' => json_encode([ 'command' => 'messages', 'target' => $target ])
+						'payload' => json_encode(['command' => 'get_messages', 'target' => $target, 'oc' => $offset])
 					],
 					'color' => 'primary'
 				];

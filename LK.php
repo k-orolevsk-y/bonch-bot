@@ -5,6 +5,7 @@
 	use DOMDocument;
 	use DOMXPath;
 	use Exception;
+	use JetBrains\PhpStorm\ArrayShape;
 	use RedBeanPHP\R;
 
 	class LK {
@@ -132,6 +133,7 @@
 			return $result;
 		}
 
+		#[ArrayShape(['count' => "int", 'messages' => "array", 'sorted_messages' => "array"])]
 		public function getMessages(): array|null {
 			$response = [];
 			$params = ['type' => 'in', 'page' => 1];
@@ -170,7 +172,7 @@
 						'id' => (int)$id,
 						'time' => strtotime($tds[0]->textContent),
 						'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
-						'text' => strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation']),
+						'text' => html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])),
 						'files' => $files,
 						str_replace(['in', 'out'], ['sender', 'receiver'], $params['type']) => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent))
 					];
@@ -179,7 +181,17 @@
 				$params['page'] += 1;
 			}
 
-			return $response;
+			usort($response, function($msg1, $msg2) {
+				return $msg1['time'] < $msg2['time'] ? 1 : -1;
+			});
+
+			$sorted_messages = [];
+			foreach($response as $message) {
+				$key = $message['sender'] ?? $message['receiver'] ?? "Неотсортированные";
+				$sorted_messages[$key][] = $message;
+			}
+
+			return ['count' => count($response), 'messages' => $response, 'sorted_messages' => $sorted_messages];
 		}
 
 		public function getNewMessages(): array|null {
@@ -208,7 +220,7 @@
 					'id' => (int)$id,
 					'time' => strtotime($tds[0]->textContent),
 					'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
-					'text' => strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation']),
+					'text' => html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])),
 					'files' => $files,
 					'sender' => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent))
 				];

@@ -43,8 +43,8 @@
 				die("401 Authorization failed.");
 			}
 
-			$api = new Api(Data::TOKENS['public'], $object, false);
-			$payload = (array) $object['payload'];
+			$api = new Api(Data::TOKENS['public'], $object);
+			$payload = (array)$object['payload'];
 
 			new DefinitionKeyboard($api, $object, $payload);
 			$api->end();
