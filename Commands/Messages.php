@@ -81,7 +81,7 @@
 				}
 
 				$api->end(true);
-				$vkApi->editMessage("📘 Получаю сообщения из ЛК...\nℹ️ Это довольно затратная функция, получение сообщений происходит в течении 15 секунд.", $conversation_message_id, $object['peer_id']);
+				$vkApi->editMessage("📘 Получаем сообщения из ЛК...\nℹ️ Это довольно затратная функция, получение сообщений происходит в течении 15 секунд.", $conversation_message_id, $object['peer_id']);
 
 				$data = $lk->getMessages();
 				if($data == null) {
@@ -110,13 +110,13 @@
 				"⚙️ В ЛК у Вас есть сообщения с " . $api->pluralForm(count($data['sorted_messages']), [ 'адресатом', 'адресатами', 'адресатами' ]) . ", выберите адресата:",
 				$conversation_message_id, $object['peer_id'],
 				[
-					'keyboard' => self::generateKeyboard($data, $object, $conversation_message_id, is_numeric($msg[1]) && $payload['update'] != null ? intval($msg[1]) : 0)
+					'keyboard' => self::generateKeyboard($data, $conversation_message_id, is_numeric($msg[1]) && $payload['update'] != null ? intval($msg[1]) : 0)
 				]
 			);
 			return true;
 		}
 
-		public static function generateKeyboard(array $data, array $object, int $conversation_message_id, int $offset = 0): string {
+		public static function generateKeyboard(array $data, int $conversation_message_id, int $offset = 0): string {
 			$keyboard = [ 'inline' => true, 'buttons' => [] ];
 			$sorted_messages = array_slice($data['sorted_messages'], $offset, 6);
 			$generator_key = ['key' => 0, 'count' => 0];

@@ -100,23 +100,6 @@
 			}
 		}
 
-		public function sendSticker(int $sticker_id, array $params = [], ?string $access_token = null): ?int {
-			$access_token = $access_token ?? $this->access_token;
-			$peer_id = $params['peer_id'] ?? $this->object['peer_id'];
-			$disable_mentions = $params['disable_mentions'] ?? 1;
-
-			try {
-				return $this->client->messages()->send($access_token, [
-						'peer_id' => $peer_id,
-						'sticker_id' => $sticker_id,
-						'random_id' => 0,
-						'disable_mentions' => $disable_mentions
-					] + $params);
-			} catch(Exception) {
-				return null;
-			}
-		}
-
 		public function useMethod(string $cat, string $method, array $params = [], bool $return_error_code = false): mixed {
 			$access_token = $params['access_token'] ?? $this->access_token;
 
@@ -137,7 +120,6 @@
 				$params['access_token'] = $this->access_token;
 			}
 
-			$response = null;
 			try {
 				$ch = curl_init();
 				curl_setopt_array($ch, [

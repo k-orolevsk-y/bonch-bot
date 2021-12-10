@@ -3,9 +3,9 @@
 	namespace Me\Korolevsky\BonchBot\Keyboard;
 
 	use Exception;
-	use Me\Korolevsky\BonchBot\Data;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
+	use Me\Korolevsky\BonchBot\Data;
 	use Me\Korolevsky\BonchBot\Interfaces\Keyboard;
 
 	class GetMessages implements Keyboard {
@@ -97,6 +97,12 @@
 		private function getFiles(array $files, int $user_id): string {
 			$result = [];
 			foreach($files as $file) {
+				$cache = R::findOne('files', 'WHERE `url` = ?', [ $file ]);
+				if($cache != null) {
+					$result[] = $cache['doc'];
+					continue;
+				}
+
 				try {
 					$file_name = basename($file);
 					file_put_contents("Files/$file_name", file_get_contents($file));
@@ -109,13 +115,20 @@
 					if($uploaded_doc == null) {
 						throw new Exception(code: 1);
 					}
-					$document = $this->api->getVkApi()->get("docs.save", ['file' => $uploaded_doc, 'title' => "Файл `$file_name` из ЛК для пользователя $user_id"])['response']['doc'];
+					$document = $this->api->getVkApi()->get("docs.save", ['file' => $uploaded_doc, 'title' => "Файл `$file_name` из ЛК"])['response']['doc'];
 					if($document == null) {
 						throw new Exception(code: 1);
 					}
 
 					unlink("Files/$file_name");
-					$result[] = "doc${document['owner_id']}_${document['id']}";
+
+					$doc = "doc${document['owner_id']}_${document['id']}";
+					$result[] = $doc;
+
+					$cache = R::dispense('files');
+					$cache['url'] = $file;
+					$cache['doc'] = $doc;
+					R::store($cache);
 				} catch(Exception) {
 					if(isset($file_name)) {
 						unlink("Files/$file_name");
