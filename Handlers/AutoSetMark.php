@@ -66,7 +66,6 @@
 				$user = R::findOne('users', 'WHERE `user_id` = ?', [ $item['user_id'] ]);
 				$login = openssl_decrypt(hex2bin($user['login']),'AES-128-CBC', Data::ENCRYPT_KEY);
 				$pass = openssl_decrypt(hex2bin($user['password']),'AES-128-CBC', Data::ENCRYPT_KEY);
-				$data = json_decode($user['data'], true);
 
 				$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [ $item['user_id'], 'schedule-'.date('d.m.Y') ]);
 				$schedule_name = "";
@@ -113,7 +112,6 @@
 						'peer_id' => $user['user_id'], 'forward' => []
 					]);
 
-					self::addScheduleStarted($data, [ 'name' => $schedule_name, 'num_with_time' => $item['num_with_time'] ], intval($user['user_id']));
 					$item['status'] = 1000;
 					R::store($item);
 					continue;

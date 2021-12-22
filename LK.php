@@ -9,8 +9,8 @@
 
 	class LK {
 
-		private string $cookie;
 		private int $user_id;
+		private string $cookie;
 
 		public function __construct(int $user_id) {
 			$this->user_id = $user_id;

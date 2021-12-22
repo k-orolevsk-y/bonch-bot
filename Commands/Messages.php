@@ -72,6 +72,7 @@
 
 			if($auth != 1) {
 				$vkApi->editMessage("⚠️ Авторизоваться в ЛК не удалось.", $conversation_message_id, $object['peer_id']);
+				return false;
 			}
 
 			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [$object['from_id'], "messages"]);
