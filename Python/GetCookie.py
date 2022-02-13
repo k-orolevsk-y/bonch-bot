@@ -25,7 +25,7 @@ driver.find_element(value='//*[@id="logButton"]', by=By.XPATH).click()
 
 time.sleep(1)
 try:
-    print(driver.get_cookie('miden')['value'])
+    print(f"miden={driver.get_cookie('miden')['value']};uid={driver.get_cookie('uid')['value']}")
 except Exception:
     print(0)
 driver.close()

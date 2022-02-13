@@ -56,7 +56,7 @@
 				CURLOPT_HTTPHEADER => [
 					'Host: lk.sut.ru',
 					'Accept-Language: ru',
-					"Cookie: miden=$cookie;",
+					"Cookie: $cookie",
 					'Connection: keep-alive',
 					'Accept: text/html, */*; q=0.01',
 					'X-Requested-With: XMLHttpRequest',
@@ -100,7 +100,7 @@
 				CURLOPT_HTTPHEADER => [
 					'Host: lk.sut.ru',
 					'Accept-Language: ru',
-					"Cookie: miden=$cookie",
+					"Cookie: $cookie",
 					'Connection: keep-alive',
 					'Accept: text/html, */*; q=0.01',
 					'X-Requested-With: XMLHttpRequest',
@@ -195,6 +195,7 @@
 
 		public function getNewMessages(): array|null {
 			$messages = $this->request("message");
+			if(empty($messages)) return null;
 
 			$doc = new DOMDocument();
 			$doc->loadHTML($messages);
@@ -232,13 +233,13 @@
 		public function getSchedule(string $date = "now 00:00:00"): array|false {
 			try {
 				if(date('m') < 6) {
-					$time_from_september = strtotime("01.09" . (date('Y') - 1));
+					$time_from = strtotime('01.09.'.(date('Y')-1));
 				} else {
-					$time_from_september = strtotime(date('01.09.Y'));
+					$time_from = strtotime(date('01.09.Y'));
 				}
 				$need_time = strtotime($date);
 
-				$days = ($need_time - $time_from_september) / (60 * 60 * 24);
+				$days = ($need_time - $time_from) / (60 * 60 * 24);
 				$week = (($days / 7) - floor($days / 7) > 0.65 ? round($days / 7) : floor($days / 7)) + 1;
 
 				$schedule = self::request("raspisanie", ['week' => $week]);
