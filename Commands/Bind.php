@@ -72,7 +72,7 @@
 			$db['login'] = bin2hex(openssl_encrypt($login, 'AES-128-CBC', Data::ENCRYPT_KEY));
 			$db['password'] = bin2hex(openssl_encrypt($password, 'AES-128-CBC', Data::ENCRYPT_KEY));
 			$db['data'] = $attempt;
-			$db['settings'] = json_encode(['type_marking' => 0, 'send_notifications' => 1, 'mailing' => 1, 'new_messages' => 1]);
+			$db['settings'] = json_encode(['type_marking' => 0, 'send_notifications' => 1, 'mailing' => 1, 'new_messages' => 1, 'schedule_from_lk' => 1]);
 			R::store($db);
 
 			// Прочитаем все новые сообщения из ЛК, чтобы бот не проспамил об этом после привязки.

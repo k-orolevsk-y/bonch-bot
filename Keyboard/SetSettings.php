@@ -10,7 +10,7 @@
 		public function __construct(Api $api, array $object, array $payload) {
 			$vkApi = $api->getVkApi();
 
-			if(!in_array($payload['key'], ['type_marking', 'send_notifications', 'mailing', 'new_messages']) || !in_array($payload['value'], [0, 1])) {
+			if(!in_array($payload['key'], ['type_marking', 'send_notifications', 'mailing', 'new_messages', 'schedule_from_lk']) || !in_array($payload['value'], [0, 1])) {
 				$vkApi->get("messages.sendMessageEventAnswer", [
 					'peer_id' => $object['peer_id'],
 					'user_id' => $object['user_id'],

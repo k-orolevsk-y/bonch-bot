@@ -268,7 +268,7 @@
 						$items[] = [
 							'num_with_time' => iconv('utf-8', 'iso8859-1', $tds[0]->textContent),
 							'name' => iconv('utf-8', 'iso8859-1', $tds[1]->getElementsByTagName('b')[0]->textContent),
-							'type' => iconv('utf-8', 'iso8859-1', $tds[1]->getElementsByTagName('small')[0]->textContent),
+							'type' => explode('занятие началось', iconv('utf-8', 'iso8859-1', $tds[1]->getElementsByTagName('small')[0]->textContent))[0],
 							'place' => iconv('utf-8', 'iso8859-1', $tds[2]->textContent),
 							'teacher' => iconv('utf-8', 'iso8859-1', $tds[3]->textContent),
 						];

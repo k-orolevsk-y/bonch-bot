@@ -111,8 +111,8 @@
 
 					if($time < time()) {
 						$carousel['elements'][] = [
-							'title' => $item['name'],
-							'description' => "${item['num_with_time']}\n${item['type']} (${item['place']})",
+							'title' => "${item['num_with_time']}\n${item['name']}",
+							'description' => "${item['teacher']}\n${item['type']} (${item['place']})",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -124,8 +124,8 @@
 						];
 					} elseif($schedule == null) {
 						$carousel['elements'][] = [
-							'title' => $item['name'],
-							'description' => "${item['num_with_time']}\n${item['type']} (${item['place']})",
+							'title' => "${item['num_with_time']}\n${item['name']}",
+							'description' => "${item['teacher']}\n${item['type']} (${item['place']})",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -137,8 +137,8 @@
 						];
 					} elseif($schedule['status'] == -1) {
 						$carousel['elements'][] = [
-							'title' => $item['name'],
-							'description' => "${item['num_with_time']}\n${item['type']} (${item['place']})",
+							'title' => "${item['num_with_time']}\n${item['name']}",
+							'description' => "${item['teacher']}\n${item['type']} (${item['place']})",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -150,8 +150,8 @@
 						];
 					} else {
 						$carousel['elements'][] = [
-							'title' => $item['name'],
-							'description' => "${item['num_with_time']}\n${item['type']} (${item['place']})",
+							'title' => "${item['num_with_time']}\n${item['name']}",
+							'description' => "${item['teacher']}\n${item['type']} (${item['place']})",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',

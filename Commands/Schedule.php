@@ -4,6 +4,7 @@
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use Me\Korolevsky\BonchBot\Interfaces\Command;
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 
 	class Schedule implements Command {
@@ -54,6 +55,7 @@
 					}
 				} else {
 					$group_id = $user['group_id'];
+					$settings = json_decode($user['settings'], true);
 				}
 			} else {
 				$bind = R::findOne('chats_bind', 'WHERE `peer_id` = ?', [ $object['peer_id'] ]);
@@ -102,45 +104,72 @@
 			}
 
 			$text = "ℹ️ Расписание на $date:\n\n";
-			foreach($schedule['items'] as $lesson) {
-				if(count($lesson['classes']) > 1) {
-					$lessons = $lesson['classes'];
-					$classes = [
-						'name' => [],
-						'teacher' => [],
-						'audience' => []
-					];
+			if(!empty($settings) && !empty($user) && $settings['schedule_from_lk']) {
+				$vkApi->editMessage("🙈 Авторизируемся в ЛК.", $conversation_message_id, $object['peer_id']);
 
-					foreach($lessons as $_lesson) {
-						$classes['name'][] = $_lesson['name'];
-						$classes['teacher'][] = $_lesson['teacher'];
-						$classes['type'] = $_lesson['type'];
+				$lk = new LK($user['user_id']);
+				$auth = $lk->auth();
 
-						$audience = $_lesson['audience'];
-						if($_lesson['navigator'] != null) {
-							$audience .= " (${_lesson['navigator']})";
+				if($auth != 1) {
+					$vkApi->editMessage("⚠️ Авторизоваться в ЛК не удалось.", $conversation_message_id, $object['peer_id']);
+					return false;
+				}
+
+				$schedule = $lk->getSchedule($date);
+				foreach($schedule['items'] as $lesson) {
+					if($lesson['place'] != "ауд.: ДОТ") {
+						$split = explode(';', $lesson['place']);
+						$num = (int) filter_var($split[0], FILTER_SANITIZE_NUMBER_INT);
+						$build_info = explode('/', ($split[1] ?? ""));
+
+						if($num > 0 && trim($build_info[0]) == "Б22" && $build_info[1] > 0) {
+							$lesson['place'] .= " (https://nav.sut.ru/?cab=k${build_info[1]}-$num)";
 						}
-						$classes['audience'][] = $audience;
 					}
 
-					$classes['name'] = implode(', ', $classes['name']);
-					$classes['teacher'] = implode(', ', $classes['teacher']);
-					$classes['audience'] = implode(', ', $classes['audience']);
-				} else {
-					$classes = $lesson['classes'][0];
-					if($classes['navigator'] != null) {
-						$classes['audience'] .= " (${classes['navigator']})";
+					$text .= "👀 ${lesson['num_with_time']}.\n📑 ${lesson['name']}\n🙋🏻 Преподователь: ${lesson['teacher']}\n📖 Тип: ${lesson['type']}\n🗺 Аудитория: ${lesson['place']}\n\n";
+				}
+			} else {
+				foreach($schedule['items'] as $lesson) {
+					if(count($lesson['classes']) > 1) {
+						$lessons = $lesson['classes'];
+						$classes = [
+							'name' => [],
+							'teacher' => [],
+							'audience' => []
+						];
+
+						foreach($lessons as $_lesson) {
+							$classes['name'][] = $_lesson['name'];
+							$classes['teacher'][] = $_lesson['teacher'];
+							$classes['type'] = $_lesson['type'];
+
+							$audience = $_lesson['audience'];
+							if($_lesson['navigator'] != null) {
+								$audience .= " (${_lesson['navigator']})";
+							}
+							$classes['audience'][] = $audience;
+						}
+
+						$classes['name'] = implode(', ', $classes['name']);
+						$classes['teacher'] = implode(', ', $classes['teacher']);
+						$classes['audience'] = implode(', ', $classes['audience']);
+					} else {
+						$classes = $lesson['classes'][0];
+						if($classes['navigator'] != null) {
+							$classes['audience'] .= " (${classes['navigator']})";
+						}
 					}
-				}
 
-				if($lesson['num'] < 1) {
-					$lesson['num'] = "";
-				} else {
-					$lesson['num'] = "${lesson['num']}.";
-				}
+					if($lesson['num'] < 1) {
+						$lesson['num'] = "";
+					} else {
+						$lesson['num'] = "${lesson['num']}.";
+					}
 
-				$classes['audience'] = str_replace('ауд.: ', '', $classes['audience']);
-				$text .= "👀 ${lesson['num']} ${classes['name']}\n🕙 Время: с ${lesson['start']} до ${lesson['end']}\n🙋🏻 Преподователь: ${classes['teacher']}\n📖 Тип: ${classes['type']}\n🗺 Аудитория: ${classes['audience']}\n\n";
+					$classes['audience'] = str_replace('ауд.: ', '', $classes['audience']);
+					$text .= "👀 ${lesson['num']} ${classes['name']}\n🕙 Время: с ${lesson['start']} до ${lesson['end']}\n🙋🏻 Преподователь: ${classes['teacher']}\n📖 Тип: ${classes['type']}\n🗺 Аудитория: ${classes['audience']}\n\n";
+				}
 			}
 
 			$vkApi->editMessage($text, $conversation_message_id, $object['peer_id'], ['keyboard' => $keyboard]);
