@@ -2,6 +2,7 @@
 	namespace Me\Korolevsky\BonchBot\Commands;
 
 	use Me\Korolevsky\BonchBot\Api;
+	use Me\Korolevsky\BonchBot\LK;
 
 	class Definition {
 

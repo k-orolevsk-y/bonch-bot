@@ -1,7 +1,6 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Commands;
 
-
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\LK;
 	use Me\Korolevsky\BonchBot\Api;
@@ -76,7 +75,7 @@
 			}
 
 			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [$object['from_id'], "messages"]);
-			if($cache == null || $msg[1] == "update" || $cache['time'] < (time() - 1800)) {
+			if($cache == null || $msg[1] == "update" || $cache['time'] < (time() - 900)) {
 				if($cache != null) {
 					R::trash($cache);
 				}

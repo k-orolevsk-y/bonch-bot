@@ -3,6 +3,7 @@
 	namespace Me\Korolevsky\BonchBot\Keyboard;
 
 	use Exception;
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
@@ -40,6 +41,19 @@
 				return false;
 			}
 
+			$lk = new LK(intval($user['user_id']));
+			$auth = $lk->auth();
+
+			if($auth != 1) {
+				$vkApi->get("messages.sendMessageEventAnswer", [
+					'peer_id' => $object['peer_id'],
+					'user_id' => $object['user_id'],
+					'event_id' => $object['event_id'],
+					'event_data' => json_encode(['type' => 'show_snackbar', 'text' => "🚫 Не удалось авторизоваться в ЛК."])
+				]);
+				return false;
+			}
+
 			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [$object['user_id'], "messages"]);
 			if($cache == null) {
 				$vkApi->editMessage("📛 В базе данных нет актуальных данных, запросите сообщения заново.", $object['conversation_message_id'], $object['peer_id'], [
@@ -68,6 +82,8 @@
 
 			foreach($sorted_messages as $message) {
 				$group_id = Data::GROUP_ID;
+
+				$message['text'] = $lk->getMessageText($message['id']);
 				if($message['receiver'] == null) {
 					$text = "🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] == null ? "Без текста" : $message['text']);
 				} else {
@@ -133,6 +149,8 @@
 					if(isset($file_name)) {
 						unlink("Files/$file_name");
 					}
+
+					$result[] = $file;
 					continue;
 				}
 			}

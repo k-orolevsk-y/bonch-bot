@@ -109,6 +109,7 @@
 					}
 					$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], $date ]);
 
+					$item['place'] = str_replace(' ', '', $item['place']);
 					if($time < time()) {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",

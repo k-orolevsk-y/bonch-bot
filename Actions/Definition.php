@@ -1,5 +1,4 @@
 <?php
-
 	namespace Me\Korolevsky\BonchBot\Actions;
 
 	use Me\Korolevsky\BonchBot\Api;

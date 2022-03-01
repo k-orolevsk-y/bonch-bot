@@ -171,7 +171,6 @@
 						'id' => (int)$id,
 						'time' => strtotime($tds[0]->textContent),
 						'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
-						'text' => html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])),
 						'files' => $files,
 						str_replace(['in', 'out'], ['sender', 'receiver'], $params['type']) => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent))
 					];
@@ -191,6 +190,10 @@
 			}
 
 			return ['count' => count($response), 'messages' => $response, 'sorted_messages' => $sorted_messages];
+		}
+
+		public function getMessageText(int $id): string {
+			return html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])) ?? "";
 		}
 
 		public function getNewMessages(): array|null {
@@ -217,7 +220,7 @@
 				}
 
 				$response[] = [
-					'id' => (int)$id,
+					'id' => (int) $id,
 					'time' => strtotime($tds[0]->textContent),
 					'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
 					'text' => html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])),
@@ -268,7 +271,7 @@
 						$items[] = [
 							'num_with_time' => iconv('utf-8', 'iso8859-1', $tds[0]->textContent),
 							'name' => iconv('utf-8', 'iso8859-1', $tds[1]->getElementsByTagName('b')[0]->textContent),
-							'type' => explode('занятие началось', iconv('utf-8', 'iso8859-1', $tds[1]->getElementsByTagName('small')[0]->textContent))[0],
+							'type' => explode('  занятие началось', iconv('utf-8', 'iso8859-1', $tds[1]->getElementsByTagName('small')[0]->textContent))[0],
 							'place' => iconv('utf-8', 'iso8859-1', $tds[2]->textContent),
 							'teacher' => iconv('utf-8', 'iso8859-1', $tds[3]->textContent),
 						];

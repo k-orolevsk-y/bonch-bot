@@ -78,32 +78,6 @@
 				$conversation_message_id = $object['conversation_message_id'];
 			}
 
-			$schedule = R::findOne('cache', 'WHERE `name` = ?', [ "all-schedule-$group_id-$date" ]);
-			if($schedule == null) {
-				$schedule = $api->sendBonchRequest("schedule.get", [ 'group_id' => $group_id, 'date' => $date ]);
-				if(!$schedule['ok']) {
-					$vkApi->editMessage("⚙️ Повторите попытку позже.", $conversation_message_id, $object['peer_id']);
-					return false;
-				}
-
-				$db = R::dispense('cache');
-				$db['user_id'] = 0;
-				$db['name'] = "all-schedule-$group_id-$date";
-				$db['data'] = json_encode($schedule);
-				R::store($db);
-			} else {
-				$schedule = json_decode($schedule['data'], true);
-			}
-
-			$schedule = $schedule['response'];
-			$keyboard = '{"buttons":[[{"action":{"type":"callback","label":"Назад '.date('d.m.Y', $datetime-86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime-86400).'\", \"update\": 1 }"},"color":"secondary"},{"action":{"type":"callback","label":"Вперед '.date('d.m.Y', $datetime+86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime+86400).'\", \"update\": 1 }"},"color":"secondary"}],[{"action":{"type":"callback","label":"« ПН","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime("monday this week")).'\", \"update\": 1 }"},"color":"primary"},{"action":{"type":"callback","label":"Сегодня","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('today')).'\", \"update\": 1 }"},"color":"secondary"},{"action":{"type":"callback","label":"ПТ »","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('friday this week')).'\", \"update\": 1 }"},"color":"primary"}]],"inline":true}';
-
-			if($schedule['count'] < 1) {
-				$vkApi->editMessage("😄 $date пар нет.", $conversation_message_id, $object['peer_id'], ['keyboard' => $keyboard]);
-				return true;
-			}
-
-			$text = "ℹ️ Расписание на $date:\n\n";
 			if(!empty($settings) && !empty($user) && $settings['schedule_from_lk']) {
 				$vkApi->editMessage("🙈 Авторизируемся в ЛК.", $conversation_message_id, $object['peer_id']);
 
@@ -116,6 +90,35 @@
 				}
 
 				$schedule = $lk->getSchedule($date);
+			} else {
+				$schedule = R::findOne('cache', 'WHERE `name` = ?', [ "all-schedule-$group_id-$date" ]);
+				if($schedule == null) {
+					$schedule = $api->sendBonchRequest("schedule.get", [ 'group_id' => $group_id, 'date' => $date ]);
+					if(!$schedule['ok']) {
+						$vkApi->editMessage("⚙️ Повторите попытку позже.", $conversation_message_id, $object['peer_id']);
+						return false;
+					}
+
+					$db = R::dispense('cache');
+					$db['user_id'] = 0;
+					$db['name'] = "all-schedule-$group_id-$date";
+					$db['data'] = json_encode($schedule);
+					R::store($db);
+				} else {
+					$schedule = json_decode($schedule['data'], true);
+				}
+
+				$schedule = $schedule['response'];
+			}
+
+			$keyboard = '{"buttons":[[{"action":{"type":"callback","label":"Назад '.date('d.m.Y', $datetime-86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime-86400).'\", \"update\": 1 }"},"color":"secondary"},{"action":{"type":"callback","label":"Вперед '.date('d.m.Y', $datetime+86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime+86400).'\", \"update\": 1 }"},"color":"secondary"}],[{"action":{"type":"callback","label":"« ПН","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime("monday this week")).'\", \"update\": 1 }"},"color":"primary"},{"action":{"type":"callback","label":"Сегодня","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('today')).'\", \"update\": 1 }"},"color":"secondary"},{"action":{"type":"callback","label":"ПТ »","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('friday this week')).'\", \"update\": 1 }"},"color":"primary"}]],"inline":true}';
+			if($schedule['count'] < 1) {
+				$vkApi->editMessage("😄 $date пар нет.", $conversation_message_id, $object['peer_id'], ['keyboard' => $keyboard]);
+				return true;
+			}
+
+			$text = "ℹ️ Расписание на $date:\n\n";
+			if(!empty($settings) && !empty($user) && $settings['schedule_from_lk']) {
 				foreach($schedule['items'] as $lesson) {
 					if($lesson['place'] != "ауд.: ДОТ") {
 						$split = explode(';', $lesson['place']);
