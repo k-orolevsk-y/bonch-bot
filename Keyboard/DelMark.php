@@ -37,7 +37,7 @@
 					'event_id' => $object['event_id'],
 					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "🤔 Задача уже была удалена." ])
 				]);
-				$vkApi->editMessage("⚙️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
+				$vkApi->editMessage("📚️️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
 				return false;
 			} elseif($db['status'] == 1000) {
 				$vkApi->get("messages.sendMessageEventAnswer", [
@@ -46,7 +46,7 @@
 					'event_id' => $object['event_id'],
 					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "🚫 Удалить задачу невозможно, поскольку уже была поставлена отметка." ])
 				]);
-				$vkApi->editMessage("⚙️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
+				$vkApi->editMessage("📚️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
 				return false;
 			}
 
@@ -58,7 +58,7 @@
 				'event_id' => $object['event_id'],
 				'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "❎ Задача на установку отметки была удалена." ])
 			]);
-			$vkApi->editMessage("⚙️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
+			$vkApi->editMessage("📚️️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
 			return true;
 		}
 	}

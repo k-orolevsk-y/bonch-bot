@@ -85,6 +85,10 @@
 
 				$message['text'] = $lk->getMessageText($message['id']);
 				if($message['receiver'] == null) {
+					if($message['sender'] == null) {
+						$message['sender'] = "Неизвестно";
+					}
+
 					$text = "🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] == null ? "Без текста" : $message['text']);
 				} else {
 					$text = "🙇🏻 Отправитель: [id${object['user_id']}|Вы]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] == null ? "Без текста" : $message['text']);

@@ -11,7 +11,7 @@
 		public function __construct(Api $api, array $object) {
 			$vkApi = $api->getVkApi();
 			$msg = explode(' ', $object['text']);
-			$payload = (array)$object['payload'];
+			$payload = (array) $object['payload'];
 
 			if($object['from_id'] == null) {
 				$object['from_id'] = $object['user_id'];
@@ -122,11 +122,15 @@
 			$generator_key = ['key' => 0, 'count' => 0];
 
 			foreach($sorted_messages as $target => $messages) {
-				$split = explode(' ', $target);
-				if(count($split) > 2) {
-					$name = "${split[0]} " . mb_substr($split[1], 0, 1) . ". " . mb_substr($split[2], 0, 1) . ".";
+				if($target == null) {
+					$name = "Неотсортированное";
 				} else {
-					$name = "${split[0]} " . mb_substr($split[1], 0, 1) . ". ";
+					$split = explode(' ', $target);
+					if(count($split) > 2) {
+						$name = "${split[0]} " . mb_substr($split[1], 0, 1) . ". " . mb_substr($split[2], 0, 1) . ".";
+					} else {
+						$name = "${split[0]} " . mb_substr($split[1], 0, 1) . ". ";
+					}
 				}
 
 				if($generator_key['count'] >= 2) {

@@ -87,7 +87,7 @@
 				'event_id' => $object['event_id'],
 				'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "✅ Задача на установку отметки создана." ])
 			]);
-			$vkApi->editMessage("⚙️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
+			$vkApi->editMessage("📚️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
 			return true;
 		}
 	}

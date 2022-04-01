@@ -28,6 +28,7 @@
 			require '../Api.php';
 			require '../Data.php';
 			require '../VKApi.php';
+			require '../WebLK.php';
 			require '../vendor/autoload.php';
 		}
 
@@ -55,14 +56,18 @@
 						$this->api->getVkApi()->sendMessage("🔔 Вам пришли новые сообщения в ЛК! (" . $this->api->pluralForm(count($new_messages), ['штука', 'штуки', 'штук']) . ")", ['peer_id' => $user['user_id'], 'forward' => []]);
 
 						foreach($new_messages as $message) {
-							$files = self::getFiles($message['files'], (int)$user['user_id']);
+							$files = self::getFiles($message['files'], (int) $user['user_id']);
 							$this->api->getVkApi()->sendMessage("🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] ?? "Без текста"), ['peer_id' => $user['user_id'], 'forward' => [], 'attachment' => $files]);
 						}
 					} else {
 						$message = $new_messages[0];
-						$files = self::getFiles($message['files'], (int)$user['user_id']);
+						$files = self::getFiles($message['files'], (int) $user['user_id']);
 
-						$this->api->getVkApi()->sendMessage("🔔 Вам пришло новое сообщение в ЛК!\n\n🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] ?? "Без текста"), ['peer_id' => $user['user_id'], 'forward' => [], 'attachment' => $files]);
+						if($message['sender'] == "Старостин Владимир Сергеевич") {
+							$this->api->getVkApi()->sendMessage("😈 Приспешник дьявола соизволил отправить вам телеграмму в ЛК!\n\n🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] ?? "Без текста"), ['peer_id' => $user['user_id'], 'forward' => [], 'attachment' => $files]);
+						} else {
+							$this->api->getVkApi()->sendMessage("🔔 Вам пришло новое сообщение в ЛК!\n\n🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] ?? "Без текста"), ['peer_id' => $user['user_id'], 'forward' => [], 'attachment' => $files]);
+						}
 					}
 				}
 			}
@@ -90,7 +95,7 @@
 
 					unlink("../Files/$file_name");
 					$result[] = "doc${document['owner_id']}_${document['id']}";
-				} catch(Exception) {
+				} catch(\Exception) {
 					if(isset($file_name)) {
 						unlink("../Files/$file_name");
 					}

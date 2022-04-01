@@ -1,11 +1,10 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Commands;
 
-	use Me\Korolevsky\BonchBot\Api;
-	use Me\Korolevsky\BonchBot\Data;
-	use Me\Korolevsky\BonchBot\Interfaces\Command;
-	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
+	use Me\Korolevsky\BonchBot\LK;
+	use Me\Korolevsky\BonchBot\Api;
+	use Me\Korolevsky\BonchBot\Interfaces\Command;
 
 	class Schedule implements Command {
 
@@ -90,88 +89,61 @@
 				}
 
 				$schedule = $lk->getSchedule($date);
-			} else {
-				$schedule = R::findOne('cache', 'WHERE `name` = ?', [ "all-schedule-$group_id-$date" ]);
 				if($schedule == null) {
-					$schedule = $api->sendBonchRequest("schedule.get", [ 'group_id' => $group_id, 'date' => $date ]);
-					if(!$schedule['ok']) {
-						$vkApi->editMessage("⚙️ Повторите попытку позже.", $conversation_message_id, $object['peer_id']);
-						return false;
-					}
-
-					$db = R::dispense('cache');
-					$db['user_id'] = 0;
-					$db['name'] = "all-schedule-$group_id-$date";
-					$db['data'] = json_encode($schedule);
-					R::store($db);
-				} else {
-					$schedule = json_decode($schedule['data'], true);
+					$vkApi->editMessage("🪦 Не удалось получить расписание из личного кабинета.", $conversation_message_id, $object['peer_id']);
+					return false;
 				}
-
-				$schedule = $schedule['response'];
+			} else {
+				$items = R::getAll('SELECT * FROM `schedule_parse` WHERE `group_id` = ? AND `date` = ? ORDER BY `id`', [ $group_id, $date ]);
+				$schedule = [ 'count' => count(array_unique(array_column($items, 'num_with_time'))), 'items' => $items ];
 			}
 
-			$keyboard = '{"buttons":[[{"action":{"type":"callback","label":"Назад '.date('d.m.Y', $datetime-86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime-86400).'\", \"update\": 1 }"},"color":"secondary"},{"action":{"type":"callback","label":"Вперед '.date('d.m.Y', $datetime+86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime+86400).'\", \"update\": 1 }"},"color":"secondary"}],[{"action":{"type":"callback","label":"« ПН","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime("monday this week")).'\", \"update\": 1 }"},"color":"primary"},{"action":{"type":"callback","label":"Сегодня","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('today')).'\", \"update\": 1 }"},"color":"secondary"},{"action":{"type":"callback","label":"ПТ »","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('friday this week')).'\", \"update\": 1 }"},"color":"primary"}]],"inline":true}';
+			$keyboard = '{"buttons":[[{"action":{"type":"callback","label":"⬅️ '.date('d.m', $datetime-86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime-86400).'\", \"update\": 1 }"},"color":"primary"},{"action":{"type":"callback","label":"Сегодня","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('today')).'\", \"update\": 1 }"},"color":"positive"},{"action":{"type":"callback","label":"'.date('d.m', $datetime+86400).' ➡️","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime+86400).'\", \"update\": 1 }"},"color":"primary"}],[{"action":{"type":"callback","label":"🔍 Поиск по преподователю","payload":"{ \"command\": \"schedule_teacher\", \"action\": 0 }"},"color":"secondary"}]],"inline":true}';
 			if($schedule['count'] < 1) {
-				$vkApi->editMessage("😄 $date пар нет.", $conversation_message_id, $object['peer_id'], ['keyboard' => $keyboard]);
+				$vkApi->editMessage("⚡️ Пар в данный день нет. ($date)", $conversation_message_id, $object['peer_id'], ['keyboard' => $keyboard]);
 				return true;
 			}
+			$keyboard = '{"buttons":[[{"action":{"type":"callback","label":"⬅️ '.date('d.m', $datetime-86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime-86400).'\", \"update\": 1 }"},"color":"primary"},{"action":{"type":"callback","label":"Сегодня","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('today')).'\", \"update\": 1 }"},"color":"positive"},{"action":{"type":"callback","label":"'.date('d.m', $datetime+86400).' ➡️","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $datetime+86400).'\", \"update\": 1 }"},"color":"primary"}],[{"action":{"type":"callback","label":"🔍 Поиск по преподователю","payload":"{ \"command\": \"schedule_teacher\", \"action\": 0 }"},"color":"secondary"}],[{"action":{"type":"callback","label":"🖼 Картинкой","payload":"{ \"command\": \"schedule_img\", \"time\": \"'.$datetime.'\" }"},"color":"secondary"}]],"inline":true}';
 
-			$text = "ℹ️ Расписание на $date:\n\n";
-			if(!empty($settings) && !empty($user) && $settings['schedule_from_lk']) {
-				foreach($schedule['items'] as $lesson) {
-					if($lesson['place'] != "ауд.: ДОТ") {
-						$split = explode(';', $lesson['place']);
+			$day = [ 'воскресенье', 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу' ][date('w', $datetime)];
+			$text = "Расписание на $day, $date.";
+			if($schedule['week'] != null) {
+				$text .= "\nНеделя ${schedule['week']}.";
+			}
+
+
+			$next_lesson = null;
+			foreach($schedule['items'] as $key => $lesson) {
+				if($next_lesson != null) {
+					$next_lesson = null;
+					continue;
+				}
+
+				if($lesson['place'] != "ауд.: ДОТ") {
+					$split = explode(';', $lesson['place']);
+					$num = (int) filter_var($split[0], FILTER_SANITIZE_NUMBER_INT);
+					$build_info = explode('/', ($split[1] ?? ""));
+
+					if($num > 0 && trim($build_info[0]) == "Б22" && $build_info[1] > 0) {
+						$lesson['place'] .= " (https://nav.sut.ru/?cab=k${build_info[1]}-$num)";
+					}
+				}
+
+				if($lesson['num_with_time'] == $schedule['items'][$key+1]['num_with_time']) {
+					$next_lesson = $schedule['items'][$key+1];
+					if($next_lesson['place'] != "ауд.: ДОТ") {
+						$split = explode(';', $next_lesson['place']);
 						$num = (int) filter_var($split[0], FILTER_SANITIZE_NUMBER_INT);
 						$build_info = explode('/', ($split[1] ?? ""));
 
 						if($num > 0 && trim($build_info[0]) == "Б22" && $build_info[1] > 0) {
-							$lesson['place'] .= " (https://nav.sut.ru/?cab=k${build_info[1]}-$num)";
+							$next_lesson['place'] .= " (https://nav.sut.ru/?cab=k${build_info[1]}-$num)";
 						}
 					}
 
-					$text .= "👀 ${lesson['num_with_time']}.\n📑 ${lesson['name']}\n🙋🏻 Преподователь: ${lesson['teacher']}\n📖 Тип: ${lesson['type']}\n🗺 Аудитория: ${lesson['place']}\n\n";
-				}
-			} else {
-				foreach($schedule['items'] as $lesson) {
-					if(count($lesson['classes']) > 1) {
-						$lessons = $lesson['classes'];
-						$classes = [
-							'name' => [],
-							'teacher' => [],
-							'audience' => []
-						];
-
-						foreach($lessons as $_lesson) {
-							$classes['name'][] = $_lesson['name'];
-							$classes['teacher'][] = $_lesson['teacher'];
-							$classes['type'] = $_lesson['type'];
-
-							$audience = $_lesson['audience'];
-							if($_lesson['navigator'] != null) {
-								$audience .= " (${_lesson['navigator']})";
-							}
-							$classes['audience'][] = $audience;
-						}
-
-						$classes['name'] = implode(', ', $classes['name']);
-						$classes['teacher'] = implode(', ', $classes['teacher']);
-						$classes['audience'] = implode(', ', $classes['audience']);
-					} else {
-						$classes = $lesson['classes'][0];
-						if($classes['navigator'] != null) {
-							$classes['audience'] .= " (${classes['navigator']})";
-						}
-					}
-
-					if($lesson['num'] < 1) {
-						$lesson['num'] = "";
-					} else {
-						$lesson['num'] = "${lesson['num']}.";
-					}
-
-					$classes['audience'] = str_replace('ауд.: ', '', $classes['audience']);
-					$text .= "👀 ${lesson['num']} ${classes['name']}\n🕙 Время: с ${lesson['start']} до ${lesson['end']}\n🙋🏻 Преподователь: ${classes['teacher']}\n📖 Тип: ${classes['type']}\n🗺 Аудитория: ${classes['audience']}\n\n";
+					$text .= "\n\n${lesson['num_with_time']}.\n📚 ${lesson['name']}\n🙋🏻 ${lesson['teacher']}, ${next_lesson['teacher']}\n📖 ${lesson['type']}\n🗺 Аудитория: ${lesson['place']}, ${next_lesson['place']}";
+				} else {
+					$text .= "\n\n${lesson['num_with_time']}.\n📚 ${lesson['name']}\n🙋🏻 ${lesson['teacher']}\n📖 ${lesson['type']}\n🗺 Аудитория: ${lesson['place']}";
 				}
 			}
 

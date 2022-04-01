@@ -37,7 +37,9 @@
 			R::trashAll(R::convertToBeans('cache', $cache));
 			R::trash($db);
 
-			$vkApi->sendMessage("✅ Данные были безвозвратно удалены.");
+			$vkApi->sendMessage("✅ Данные были безвозвратно удалены.", [
+				'keyboard' => '{"buttons":[]}'
+			]);
 			return true;
 		}
 

@@ -29,6 +29,7 @@
 			$vkApi->sendMessage("📑 Сформирован запрос на заказ справки.\n\n❔ Место предоставления: ${types[$payload['why']]}\n✏️ Цель получения: ${object['text']}\n\n⚙️ Выполнить заказ справки?", [
 				'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Заказать","payload":"{ \"command\": \"order_confirm\", \"why\": ' . $payload['why'] . ', \"goal\": \"' . $object['text'] . '\" }"},"color":"positive"},{"action":{"type":"callback","label":"Отмена","payload":"{ \"command\": \"cancel\" }"},"color":"negative"}]],"inline":true}'
 			]);
+			return true;
 		}
 
 	}

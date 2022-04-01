@@ -26,13 +26,11 @@
 
 			$request = self::request("news", cookie: openssl_decrypt(hex2bin($user['cookie']), 'AES-128-CBC', Data::ENCRYPT_KEY) ?? "");
 			if($request === false) {
-				$login = openssl_decrypt(hex2bin($user['login']), 'AES-128-CBC', Data::ENCRYPT_KEY);
-				$pass = openssl_decrypt(hex2bin($user['password']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+				$webLK = new WebLK($this->user_id);
+				$cookie = $webLK->getCookie();
 
-				// Путь прописан напрямую, поскольку этот класс может вызываться в разных частях бота (т.е. это может быть внутренней папкой и из-за этого не получиться запустить GetCookie)
-				$cookie = exec("python3.9 /var/www/ssapi.ru/bots/bonch/Python/GetCookie.py '$login' '$pass'");
-				if(!is_string($cookie)) {
-					return -2;
+				if($cookie == null) {
+					return 0;
 				}
 
 				$user['cookie'] = bin2hex(openssl_encrypt($cookie, 'AES-128-CBC', Data::ENCRYPT_KEY));
@@ -76,7 +74,10 @@
 			if($error = curl_errno($ch)) {
 				if($error == 23) { // Если ты не авторизован, ЛК может прислать 23 код ошибки (curl error)
 					return false;
+				} elseif($error == 28) {
+					return null;
 				}
+
 				return $error;
 			} elseif($result == "У Вас нет прав доступа. Или необходимо перезагрузить приложение..") {
 				return false;
@@ -168,7 +169,7 @@
 					}
 
 					$response[] = [
-						'id' => (int)$id,
+						'id' => (int) $id,
 						'time' => strtotime($tds[0]->textContent),
 						'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
 						'files' => $files,
@@ -192,8 +193,22 @@
 			return ['count' => count($response), 'messages' => $response, 'sorted_messages' => $sorted_messages];
 		}
 
+
 		public function getMessageText(int $id): string {
 			return html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])) ?? "";
+		}
+
+		public function getFilesGroups(): array|null {
+			$response = [];
+			$page = 1;
+
+
+			while(true) {
+				$files = $this->request("files_group_pr", [ 'page' => $page ]);
+				if(str_contains($files, "Файлов пока нет.")) break;
+
+				$page += 1;
+			}
 		}
 
 		public function getNewMessages(): array|null {
@@ -225,7 +240,7 @@
 					'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
 					'text' => html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])),
 					'files' => $files,
-					'sender' => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent))
+					'sender' => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent)) ?? "Система"
 				];
 			}
 
@@ -278,7 +293,7 @@
 					}
 				}
 
-				return ['count' => count($items), 'items' => $items];
+				return ['count' => count(array_unique(array_column($items, 'num_with_time'))), 'week' => $week,  'items' => $items];
 			} catch(Exception) {
 				return false;
 			}

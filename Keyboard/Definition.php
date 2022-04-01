@@ -49,6 +49,10 @@
 					return new OrderConfirm($api, $object, $payload);
 				case "get_messages":
 					return new GetMessages($api, $object, $payload);
+				case "schedule_teacher":
+					return new ScheduleTeacher($api, $object, $payload);
+				case "schedule_img":
+					return new ScheduleImg($api, $object, $payload);
 			}
 		}
 

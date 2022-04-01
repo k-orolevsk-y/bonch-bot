@@ -9,6 +9,8 @@
 			switch($payload['action']) {
 				case "order":
 					return new Order($api, $object, $payload);
+				case "schedule_teacher":
+					return new ScheduleTeacher($api, $object, $payload);
 			}
 		}
 

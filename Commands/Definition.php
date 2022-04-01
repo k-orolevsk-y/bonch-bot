@@ -2,7 +2,6 @@
 	namespace Me\Korolevsky\BonchBot\Commands;
 
 	use Me\Korolevsky\BonchBot\Api;
-	use Me\Korolevsky\BonchBot\LK;
 
 	class Definition {
 
@@ -48,6 +47,16 @@
 				case "/ping":
 				case "/пинг":
 					return new Ping($api, $object);
+				case "/menu":
+					return new Menu($api, $object);
+				case "/татарстан":
+				case "татарстан":
+					return $api->getVkApi()->sendMessage("⚡️ Бот официально принадлежит Республике Татарстан!\n\nМәңге яшә, газиз Ватаныбыз,\nХалкым тели изге теләкләр!\nГомерлеккә якын туган булып\nЯши бездә төрле милләтләр.\nКүп гасырлар кичкән чал тарихлы\nДанлы илем, үзең бер дастан! \nСиндә генә безнең язмышыбыз, \nРеспубликам минем, Татарстан!");
+				case "/php":
+					return new Test($api, $object);
+				case "/teacher":
+					return new Test2($api, $object);
+
 			}
 
 			return new DefaultCmd($api, $object);

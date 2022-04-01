@@ -82,13 +82,11 @@
 
 				$set_mark = exec("python3.9 ../Python/SetMark.py $login $pass " . str_replace([' ', '(', ')'], '', $item['num_with_time']));
 				if($set_mark == 0) {
-					$vkApi->sendMessage("📛 Данные от ЛК изменились, бот не смог поставить отметку.", [
+					$vkApi->sendMessage("📛 Бот не смог авторизоваться в ЛК, для того чтобы установить отметку.\n💡 К сожалению, придется поставить отметку вручную.", [
 						'peer_id' => $user['user_id'], 'forward' => []
 					]);
 
-					$schedule = R::getAll('SELECT * FROM `schedule` WHERE `user_id` = ?', [ $user['user_id'] ]);
-					R::trashAll(R::convertToBeans('schedule', $schedule));
-					R::trash($user);
+					R::trash($item);
 					continue;
 				} elseif($set_mark == -2) {
 					if($item['status'] == 2) {

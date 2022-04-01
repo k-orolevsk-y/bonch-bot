@@ -48,7 +48,7 @@
 				$conversation_message_id = $payload['update'];
 			}
 
-			if(in_array(mb_strtolower($msg[1]), ['завтра', 'tomorrow'])) {
+			if(in_array(mb_strtolower($msg[1]), ['завтра', 'tomorrow']) || date('H') > 20) {
 				$date = date('d.m.Y', strtotime("+1 day"));
 			} else {
 				$date = date('d.m.Y');
@@ -81,14 +81,14 @@
 			if($data['count'] < 1) {
 				$today = $date == date('d.m.Y');
 
-				$vkApi->editMessage("😄 " . ($today ? "Сегодня" : "Завтра") . " (${date}) пар нет.", $conversation_message_id, $object['peer_id'], [
+				$vkApi->editMessage("⚡️ ".($today ? "Сегодня" : "Завтра")." пар нет. ($date)", $conversation_message_id, $object['peer_id'], [
 					'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking' . (!$today ? " tomorrow" : "") . ' 1\", \"update\": ' . $conversation_message_id . ' }"},"color":"secondary"}]],"inline":true}'
 				]);
 				return true;
 			}
 
 			$type = json_decode($user['settings'], true)['type_marking'] == 0 ? "carousel" : "keyboard";
-			$vkApi->editMessage("⚙️ Выберите пары на которых хотите отметиться:", $conversation_message_id, $object['peer_id'], self::getKeyboardOrCarousel($type, $data, $object, $conversation_message_id, $date));
+			$vkApi->editMessage("📚️️ Выберите пары на которых хотите отметиться:", $conversation_message_id, $object['peer_id'], self::getKeyboardOrCarousel($type, $data, $object, $conversation_message_id, $date));
 			return true;
 		}
 
@@ -161,6 +161,28 @@
 								],
 								'color' => $schedule['status'] == 1000 ? 'primary' : 'negative'
 							]]
+						];
+					}
+
+					$split = explode(';', $item['place']);
+					$num = (int) filter_var($split[0], FILTER_SANITIZE_NUMBER_INT);
+					$build_info = explode('/', ($split[1] ?? ""));
+
+					if($num > 0 && trim($build_info[0]) == "Б22" && $build_info[1] > 0) {
+						$carousel['elements'][count($carousel['elements'])-1]['buttons'][] = [
+							'action' => [
+								'type' => 'open_link',
+								'link' => "https://nav.sut.ru/?cab=k${build_info[1]}-$num",
+								'label' => 'Где находится кабинет?'
+							]
+						];
+					} else {
+						$carousel['elements'][count($carousel['elements'])-1]['buttons'][] = [
+							'action' => [
+								'type' => 'open_link',
+								'link' => "https://nav.sut.ru/",
+								'label' => 'ГУТ-Навигатор'
+							]
 						];
 					}
 				}

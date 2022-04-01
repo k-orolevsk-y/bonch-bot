@@ -29,6 +29,7 @@
 			require '../Api.php';
 			require '../Data.php';
 			require '../VKApi.php';
+			require '../WebLK.php';
 			require '../vendor/autoload.php';
 			require '../Interfaces/Command.php';
 			require '../Commands/Marking.php';
@@ -76,10 +77,19 @@
 
 				$type = json_decode($user['settings'], true)['type_marking'] == 0 ? "carousel" : "keyboard";
 				if($date == date('d.m.Y')) {
-					$vkApi->sendMessage("👋🏻 Доброе утро.\n📝 По расписанию у Вас сегодня " . $this->api->pluralForm($schedule['count'], ['пара', 'пары', 'пар']) . ".\n⚙️ На каких Вас отметить?\n\n🔕 Рассылку о парах можно отключить в профиле.", [
-							'peer_id' => $user['user_id'],
-							'forward' => []
-						] + Marking::getKeyboardOrCarousel($type, $schedule, ['from_id' => $user['user_id']], 0, $date));
+					$marking = R::count('schedule', 'WHERE `user_id` = ? AND `date` = ?', [ $user['user_id'], $date ]);
+					if($marking < 1) {
+						$last_message_id = $vkApi->useMethod("messages", "search", [ 'q' => '🏻 Добрый вечер. 📝 По расписанию у Вас завтра', 'count' => 1, 'peer_id' => $user['user_id'] ])['items'][0]['conversation_message_id'];
+						if(isset($last_message_id)) {
+							$vkApi->get("messages.delete", ['peer_id' => $user['user_id'], 'conversation_message_ids' => [$last_message_id], 'delete_for_all' => 1 ]);
+						}
+
+
+						$vkApi->sendMessage("👋🏻 Доброе утро.\n📝 По расписанию у Вас сегодня " . $this->api->pluralForm($schedule['count'], ['пара', 'пары', 'пар']) . ".\n⚙️ На каких Вас отметить?\n\n🔕 Рассылку о парах можно отключить в профиле.", [
+								'peer_id' => $user['user_id'],
+								'forward' => []
+							] + Marking::getKeyboardOrCarousel($type, $schedule, ['from_id' => $user['user_id']], 0, $date));
+					}
 				} else {
 					$vkApi->sendMessage("👋🏻 Добрый вечер.\n📝 По расписанию у Вас завтра " . $this->api->pluralForm($schedule['count'], ['пара', 'пары', 'пар']) . ".\n⚙️ На каких Вас отметить?\n\n🔕 Рассылку о парах можно отключить в профиле.", [
 							'peer_id' => $user['user_id'],

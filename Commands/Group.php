@@ -34,12 +34,11 @@
 				return false;
 			}
 
-			$group = $api->sendBonchRequest("groups.find", [ 'name' => $msg[1] ])['response'];
+			$group = R::findOne('groups', 'WHERE `name` LIKE ?', [ "%${msg[1]}%" ]);
 			if($group == null) {
 				$vkApi->sendMessage("🚫 Такая группа не найдена. Проверьте название группы на опечатки.");
 				return false;
 			}
-			$group = $group['group'];
 
 			$bind = R::getRedBean()->dispense('chats_bind');
 			$bind['peer_id'] = $object['peer_id'];

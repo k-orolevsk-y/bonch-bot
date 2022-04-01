@@ -5,6 +5,7 @@
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use Me\Korolevsky\BonchBot\Interfaces\Command;
+	use Me\Korolevsky\BonchBot\WebLK;
 	use RedBeanPHP\R;
 
 	class Marks implements Command {
@@ -38,9 +39,6 @@
 				return false;
 			}
 
-			$login = openssl_decrypt(hex2bin($user['login']),'AES-128-CBC', Data::ENCRYPT_KEY);
-			$pass = openssl_decrypt(hex2bin($user['password']),'AES-128-CBC', Data::ENCRYPT_KEY);
-
 			if($payload['update'] == null) {
 				$conversation_message_id = $vkApi->sendMessage("📘 Получаю скриншот из ЛК...", [
 						'peer_ids' => $object['peer_id'],
@@ -51,10 +49,12 @@
 				$conversation_message_id = $payload['update'];
 				$vkApi->editMessage("📘 Получаю скриншот из ЛК...", $conversation_message_id, $object['peer_id']);
 			}
-
 			$api->end(true);
-			$data = json_decode(exec("python3.9 Python/GetMarks.py $login $pass"), true);
-			if($data['error'] || $data == null) {
+
+			$webLK = new WebLK(intval($object['from_id']));
+			$marks = $webLK->getScreenMarks();
+
+			if($marks == null) {
 				$vkApi->editMessage("❌ Не удалось создать скриншот оценок.", $conversation_message_id, $object['peer_id']);
 				return false;
 			}
@@ -64,7 +64,7 @@
 				if($address == null) {
 					throw new Exception(code: 0);
 				}
-				$uploaded_doc = $vkApi->getClient()->getRequest()->upload($address, 'file', "Files/${data['file_name']}")['file'];
+				$uploaded_doc = $vkApi->getClient()->getRequest()->upload($address, 'file', $marks)['file'];
 				if($uploaded_doc == null) {
 					throw new Exception(code: 1);
 				}
@@ -73,7 +73,7 @@
 					throw new Exception(code: 1);
 				}
 			} catch(Exception $e) {
-				unlink("Files/${data['file_name']}");
+				unlink($marks);
 				if($e->getCode() == 0) {
 					$vkApi->editMessage("📛 Невозможно загрузить скриншот, скорее всего у бота закрыт доступ к отправки для вас сообщений.", $conversation_message_id, $object['peer_id']);
 				} else {
