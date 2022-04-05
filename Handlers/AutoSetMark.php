@@ -2,6 +2,7 @@
 	namespace Me\Korolevsky\BonchBot\Handlers;
 	error_reporting(0);
 
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
@@ -24,8 +25,10 @@
 
 		#[NoReturn]
 		private function autoload() {
+			require '../LK.php';
 			require '../Api.php';
 			require '../Data.php';
+			require '../WebLK.php';
 			require '../VKApi.php';
 			require '../vendor/autoload.php';
 		}
@@ -63,71 +66,73 @@
 					continue;
 				}
 
-				$user = R::findOne('users', 'WHERE `user_id` = ?', [ $item['user_id'] ]);
-				$login = openssl_decrypt(hex2bin($user['login']),'AES-128-CBC', Data::ENCRYPT_KEY);
-				$pass = openssl_decrypt(hex2bin($user['password']),'AES-128-CBC', Data::ENCRYPT_KEY);
-
-				$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [ $item['user_id'], 'schedule-'.date('d.m.Y') ]);
-				$schedule_name = "";
-
-				if($cache != null) {
-					$sked = json_decode($cache['data'], true)['items'];
-					foreach($sked as $s_item) {
-						if($s_item['num_with_time'] == $item['num_with_time']) {
-							$group_id = Data::GROUP_ID;
-							$schedule_name = " [club$group_id|${s_item['name']}]";
-						}
-					}
-				}
-
-				$set_mark = exec("python3.9 ../Python/SetMark.py $login $pass " . str_replace([' ', '(', ')'], '', $item['num_with_time']));
-				if($set_mark == 0) {
-					$vkApi->sendMessage("📛 Бот не смог авторизоваться в ЛК, для того чтобы установить отметку.\n💡 К сожалению, придется поставить отметку вручную.", [
-						'peer_id' => $user['user_id'], 'forward' => []
+				$lk = new LK(intval($item['user_id']));
+				if($lk->auth() != 1) {
+					$vkApi->sendMessage("📛 Бот не смог авторизоваться в ЛК, для того чтобы установить отметку.\n💡 К сожалению, придётся поставить отметку вручную в ЛК.", [
+						'peer_id' => $item['user_id'], 'forward' => []
 					]);
 
 					R::trash($item);
 					continue;
-				} elseif($set_mark == -2) {
+				}
+
+
+				$sked = $lk->getSchedule($item['date']);
+				$this_lesson = null;
+
+				foreach($sked['items'] as $lesson) {
+					if($lesson['num_with_time'] == $item['num_with_time'] && $lesson['teacher'] == $item['teacher']) {
+						$this_lesson = $lesson;
+						break;
+					}
+				}
+
+				if($this_lesson == null || $this_lesson['marking']['status'] == -1) {
+					$vkApi->sendMessage("️📛 Не удалось отметиться на паре. Бот не смог найти данный предмет в расписании.\n💡 Если занятие всё таки есть, поставьте отметку вручную в ЛК.", [
+						'peer_id' => $item['user_id'], 'forward' => []
+					]);
+
+					R::trash($item);
+					continue;
+				}
+
+
+				$marking = $this_lesson['marking'];
+				$schedule_name = "[club".Data::GROUP_ID."|${this_lesson['name']} (${this_lesson['teacher']})]";
+
+				if($marking['status'] == 0) {
 					if($item['status'] == 2) {
-						$vkApi->sendMessage("⚙️ Отметиться на паре$schedule_name не удалось, будет ещё три попытки отметиться, если не получиться, я пришлю об этом сообщение в диалог.", [
-							'peer_id' => $user['user_id'], 'forward' => []
+						$vkApi->sendMessage("⚙️ Отметиться на паре $schedule_name не удалось, будет ещё три попытки отметиться, если не получиться, я пришлю об этом сообщение в диалог.", [
+							'peer_id' => $item['user_id'], 'forward' => []
 						]);
 					}
 
 					$item['status'] += 1;
 					if($item['status'] > 5) {
-						$vkApi->sendMessage("🚫 Не удалось отметиться на паре$schedule_name, скорее всего преподователь не начал занятие.", [
-							'peer_id' => $user['user_id'], 'forward' => []
+						$vkApi->sendMessage("🚫 Не удалось отметиться на паре $schedule_name, скорее всего преподователь не начал занятие.", [
+							'peer_id' => $item['user_id'], 'forward' => []
 						]);
 						$item['status'] = -1;
 					}
 
 					R::store($item);
 					continue;
-				} elseif($set_mark == -3) {
-					$vkApi->sendMessage("🤔 Вы уже отметились на паре$schedule_name до бота, какой Вы молодец!", [
-						'peer_id' => $user['user_id'], 'forward' => []
+				} elseif($marking['status'] == 2) {
+					$vkApi->sendMessage("🤔 Вы уже отметились на паре $schedule_name до бота, какой Вы молодец!", [
+						'peer_id' => $item['user_id'], 'forward' => []
 					]);
 
 					$item['status'] = 1000;
 					R::store($item);
 					continue;
-				} elseif($set_mark != 1) {
-					if($set_mark == null) $set_mark = -100;
-					$vkApi->sendMessage("📛 Не удалось отметиться на паре$schedule_name, причина по которой это сделать не получилось неизвестна.\nКод ошибки: $set_mark", [
-						'peer_id' => $user['user_id'], 'forward' => []
-					]);
-
-					R::trash($item);
-					continue;
 				}
 
+				$lk->setMark(intval($marking['id']), intval($sked['week']));
 				$item['status'] = 1000;
 				R::store($item);
 
-				$vkApi->sendMessage("✅ Вы были отмечены на паре$schedule_name.", [
-					'peer_id' => $user['user_id'], 'forward' => []
+				$vkApi->sendMessage("✅ Вы были отмечены на паре $schedule_name.", [
+					'peer_id' => $item['user_id'], 'forward' => []
 				]);
 			}
 		}

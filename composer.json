@@ -6,7 +6,8 @@
         "vkcom/vk-php-sdk": "^5.101",
         "php-webdriver/webdriver": "^1.12",
         "ext-dom": "*",
-        "ext-imagick": "*"
+        "ext-imagick": "*",
+        "ext-iconv": "*"
     },
     "license": "MIT",
     "authors": [

@@ -54,28 +54,19 @@
 				$date = date('d.m.Y');
 			}
 
-			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [$object['from_id'], "schedule-$date"]);
-			if($cache == null || end($msg) == 1) {
-				if($cache != null) {
-					R::trash($cache);
-				}
+			$lk = new LK($user['user_id']);
+			$auth = $lk->auth();
 
-				$lk = new LK($user['user_id']);
-				$lk->auth();
-				$data = $lk->getSchedule($date);
+			if($auth != 1) {
+				$vkApi->editMessage("⚠️ Авторизоваться в ЛК не удалось.", $conversation_message_id, $object['peer_id']);
+				return false;
+			}
 
-				if($data === false) {
-					$vkApi->editMessage("❌ Не удалось получить данные из ЛК.", $conversation_message_id, $object['peer_id']);
-					return false;
-				}
 
-				$cache = R::dispense('cache');
-				$cache['user_id'] = $object['from_id'];
-				$cache['name'] = "schedule-$date";
-				$cache['data'] = json_encode($data);
-				R::store($cache);
-			} else {
-				$data = json_decode($cache['data'], true);
+			$data = $lk->getSchedule($date);
+			if($data === false) {
+				$vkApi->editMessage("❌ Не удалось получить данные из ЛК.", $conversation_message_id, $object['peer_id']);
+				return false;
 			}
 
 			if($data['count'] < 1) {
@@ -131,7 +122,7 @@
 								'action' => [
 									'type' => 'callback',
 									'label' => 'Отметиться',
-									'payload' => json_encode(['command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'update' => $conversation_message_id, 'date' => $date])
+									'payload' => json_encode(['command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'teacher' => $item['teacher'], 'date' => $date])
 								],
 								'color' => 'positive'
 							]]
@@ -215,7 +206,7 @@
 						'action' => [
 							'type' => 'callback',
 							'label' => $name,
-							'payload' => json_encode([ 'command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'update' => $conversation_message_id, 'date' => $date ])
+							'payload' => json_encode([ 'command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'teacher' => $item['teacher'], 'date' => $date ])
 						],
 						'color' => 'positive'
 					];

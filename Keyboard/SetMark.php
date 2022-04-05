@@ -2,6 +2,7 @@
 	namespace Me\Korolevsky\BonchBot\Keyboard;
 
 	use Me\Korolevsky\BonchBot\Commands\Marking;
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Interfaces\Keyboard;
@@ -33,17 +34,20 @@
 				return false;
 			}
 
-			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [ $object['user_id'], 'schedule-'.$payload['date'] ]);
-			if($cache == null) {
+			$lk = new LK(intval($object['user_id']));
+			if($lk->auth() != 1) {
 				$vkApi->sendMessage("📛 Нет возможности проверить достоверность данных, вызовите список отметок заново.", [
 					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Вызвать","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking\" }"},"color":"negative"}]],"inline":true}'
 				]);
 				return false;
 			}
-			$data = json_decode($cache['data'], true);
+
+			$data = $lk->getSchedule($payload['date']);
 
 			$nums_with_dates = array_column($data['items'], 'num_with_time');
-			if(!in_array($payload['num_with_time'], $nums_with_dates)) {
+			$teachers = array_column($data['items'], 'teacher');
+
+			if(!in_array($payload['num_with_time'], $nums_with_dates) || !in_array($payload['teacher'], $teachers)) {
 				$vkApi->sendMessage("📛 Данные недостоверны, обновите список отметок.", [
 					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking 1\" }"},"color":"negative"}]],"inline":true}'
 				]);
@@ -67,18 +71,15 @@
 				return true;
 			}
 
-			$db = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['user_id'], $payload['num_with_time'], $payload['date'] ]);
+			$db = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ? AND `teacher` = ?', [ $object['user_id'], $payload['num_with_time'], $payload['date'], $payload['teacher'] ]);
 			if($db == null) {
 				$db = R::dispense('schedule');
 				$db['user_id'] = $object['user_id'];
 				$db['date'] = $payload['date'];
 				$db['status'] = 0;
 				$db['num_with_time'] = $payload['num_with_time'];
+				$db['teacher'] = $payload['teacher'];
 				R::store($db);
-			}
-
-			if($payload['update'] == null || $payload['update'] == 0) {
-				$payload['update'] = $object['conversation_message_id'];
 			}
 
 			$vkApi->get("messages.sendMessageEventAnswer", [
@@ -87,7 +88,7 @@
 				'event_id' => $object['event_id'],
 				'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "✅ Задача на установку отметки создана." ])
 			]);
-			$vkApi->editMessage("📚️ Выберите пары на которых хотите отметиться:", $payload['update'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $payload['update'], $payload['date']));
+			$vkApi->editMessage("📚️ Выберите пары на которых хотите отметиться:", $object['conversation_message_id'], $object['peer_id'], Marking::getKeyboardOrCarousel($type, $data, $object, $object['conversation_message_id'], $payload['date']));
 			return true;
 		}
 	}

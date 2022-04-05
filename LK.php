@@ -248,6 +248,14 @@
 			return $response;
 		}
 
+		public function setMark(int $id, int $week): mixed {
+			return $this->post('raspisanie', [
+				'open' => 1,
+				'rasp' => $id,
+				'week' => $week
+			]);
+		}
+
 		public function getSchedule(string $date = "now 00:00:00"): array|false {
 			try {
 				if(date('m') < 6) {
@@ -260,7 +268,7 @@
 				$days = ($need_time - $time_from) / (60 * 60 * 24);
 				$week = (($days / 7) - floor($days / 7) > 0.65 ? round($days / 7) : floor($days / 7)) + 1;
 
-				$schedule = self::request("raspisanie", ['week' => $week]);
+				$schedule = $this->request("raspisanie", ['week' => $week]);
 				$doc = new DOMDocument();
 				$doc->loadHTML($schedule);
 				$xpath = new DOMXPath($doc);
@@ -283,12 +291,30 @@
 
 					if($date_is_fined) {
 						$tds = $tr->getElementsByTagName('td');
+
+						$btn = $tds[4]->getElementsByTagName('a')[0];
+						if($btn != null) {
+							$attr = $btn->getAttribute('onclick');
+							preg_match('/([^\)]+)\((.*)\)/', $attr, $matches); // Получаем данные из скобок кнопки
+
+							$marking = [
+								'id' => intval(explode(',', $matches[2])[0]),
+								'status' => stripos($attr, 'update_zan') !== false ? 0 : (stripos($attr, 'open_zan') !== false ? 1 : -1),
+							];
+						} else {
+							$marking = [
+								'id' => 0,
+								'status' => $tds[4]->textContent == null ? -1 : 2
+							];
+						}
+
 						$items[] = [
 							'num_with_time' => iconv('utf-8', 'iso8859-1', $tds[0]->textContent),
 							'name' => iconv('utf-8', 'iso8859-1', $tds[1]->getElementsByTagName('b')[0]->textContent),
 							'type' => explode('  занятие началось', iconv('utf-8', 'iso8859-1', $tds[1]->getElementsByTagName('small')[0]->textContent))[0],
 							'place' => iconv('utf-8', 'iso8859-1', $tds[2]->textContent),
 							'teacher' => iconv('utf-8', 'iso8859-1', $tds[3]->textContent),
+							'marking' => $marking
 						];
 					}
 				}
@@ -298,5 +324,4 @@
 				return false;
 			}
 		}
-
 	}
