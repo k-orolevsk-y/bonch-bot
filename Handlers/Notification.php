@@ -66,15 +66,6 @@
 				if($schedule == null) continue;
 				elseif($schedule['count'] < 1) continue;
 
-				$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [$user['user_id'], "schedule-$date"]);
-				if($cache == null) {
-					$cache = R::dispense('cache');
-					$cache['user_id'] = $user['user_id'];
-					$cache['name'] = "schedule-$date";
-					$cache['data'] = json_encode($schedule);
-					R::store($cache);
-				}
-
 				$type = json_decode($user['settings'], true)['type_marking'] == 0 ? "carousel" : "keyboard";
 				if($date == date('d.m.Y')) {
 					$marking = R::count('schedule', 'WHERE `user_id` = ? AND `date` = ?', [ $user['user_id'], $date ]);

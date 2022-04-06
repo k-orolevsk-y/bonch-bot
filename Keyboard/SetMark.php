@@ -43,22 +43,20 @@
 			}
 
 			$data = $lk->getSchedule($payload['date']);
+			$item = $data['items'][$payload['key']];
 
-			$nums_with_dates = array_column($data['items'], 'num_with_time');
-			$teachers = array_column($data['items'], 'teacher');
-
-			if(!in_array($payload['num_with_time'], $nums_with_dates) || !in_array($payload['teacher'], $teachers)) {
+			if($item == null) {
 				$vkApi->sendMessage("📛 Данные недостоверны, обновите список отметок.", [
 					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking 1\" }"},"color":"negative"}]],"inline":true}'
 				]);
 				return false;
 			}
 
-			$exp = explode(' ', $payload['num_with_time']);
+			$exp = explode(' ', $item['num_with_time']);
 			if(count($exp) > 1) {
 				$time = strtotime($payload['date'].' '.explode('-', str_replace(['(', ')', ':'], ['','','.'], $exp[1]))[1]);
 			} else {
-				$time = strtotime($payload['date'].' '.explode('-', $payload['num_with_time'])[1]);
+				$time = strtotime($payload['date'].' '.explode('-', $item['num_with_time'])[1]);
 			}
 
 			if($time < time()) {
@@ -71,14 +69,14 @@
 				return true;
 			}
 
-			$db = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ? AND `teacher` = ?', [ $object['user_id'], $payload['num_with_time'], $payload['date'], $payload['teacher'] ]);
+			$db = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ? AND `teacher` = ?', [ $object['user_id'], $item['num_with_time'], $payload['date'], $item['teacher'] ]);
 			if($db == null) {
 				$db = R::dispense('schedule');
 				$db['user_id'] = $object['user_id'];
 				$db['date'] = $payload['date'];
 				$db['status'] = 0;
-				$db['num_with_time'] = $payload['num_with_time'];
-				$db['teacher'] = $payload['teacher'];
+				$db['num_with_time'] = $item['num_with_time'];
+				$db['teacher'] = $item['teacher'];
 				R::store($db);
 			}
 

@@ -80,6 +80,7 @@
 
 			$type = json_decode($user['settings'], true)['type_marking'] == 0 ? "carousel" : "keyboard";
 			$vkApi->editMessage("📚️️ Выберите пары на которых хотите отметиться:", $conversation_message_id, $object['peer_id'], self::getKeyboardOrCarousel($type, $data, $object, $conversation_message_id, $date));
+//			$vkApi->sendMessage(self::getKeyboardOrCarousel($type, $data, $object, $conversation_message_id, $date)['template']);
 			return true;
 		}
 
@@ -91,7 +92,7 @@
 
 			if($type == "carousel") {
 				$carousel = [ 'type' => 'carousel', 'elements' => [] ];
-				foreach($data['items'] as $item) {
+				foreach($data['items'] as $key => $item) {
 					$exp = explode(' ', $item['num_with_time']);
 					if(count($exp) > 1) {
 						$time = strtotime($date.' '.explode('-', str_replace(['(', ')', ':'], ['','','.'], $exp[1]))[1]);
@@ -100,11 +101,14 @@
 					}
 					$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], $date ]);
 
-					$item['place'] = str_replace(' ', '', $item['place']);
+					if(iconv_strlen($item['name']) >= 72) {
+						$item['name'] = mb_strcut($item['name'], 0, 69) . "...";
+					}
+
 					if($time < time()) {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",
-							'description' => "${item['teacher']}\n${item['type']} (${item['place']})",
+							'description' => "${item['teacher']}\n${item['place']}",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -117,12 +121,12 @@
 					} elseif($schedule == null) {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",
-							'description' => "${item['teacher']}\n${item['type']} (${item['place']})",
+							'description' => "${item['teacher']}\n${item['place']}",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
 									'label' => 'Отметиться',
-									'payload' => json_encode(['command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'teacher' => $item['teacher'], 'date' => $date])
+									'payload' => json_encode(['command' => 'set_mark', 'key' => $key, 'date' => $date])
 								],
 								'color' => 'positive'
 							]]
@@ -130,7 +134,7 @@
 					} elseif($schedule['status'] == -1) {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",
-							'description' => "${item['teacher']}\n${item['type']} (${item['place']})",
+							'description' => "${item['teacher']}\n${item['place']}",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -143,7 +147,7 @@
 					} else {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",
-							'description' => "${item['teacher']}\n${item['type']} (${item['place']})",
+							'description' => "${item['teacher']}\n${item['place']}",
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -182,7 +186,7 @@
 			}
 
 			$keyboard = [ 'buttons' => [], 'inline' => true ];
-			foreach($data['items'] as $item) {
+			foreach($data['items'] as $key => $item) {
 				$exp = explode(' ', $item['num_with_time']);
 				if(count($exp) > 1) {
 					$time = strtotime($date.' '.explode('-', str_replace(['(', ')', ':'], ['','','.'], $exp[1]))[1]);
@@ -206,7 +210,7 @@
 						'action' => [
 							'type' => 'callback',
 							'label' => $name,
-							'payload' => json_encode([ 'command' => 'set_mark', 'num_with_time' => $item['num_with_time'], 'teacher' => $item['teacher'], 'date' => $date ])
+							'payload' => json_encode([ 'command' => 'set_mark', 'key' => $key, 'date' => $date ])
 						],
 						'color' => 'positive'
 					];

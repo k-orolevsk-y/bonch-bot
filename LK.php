@@ -292,15 +292,27 @@
 					if($date_is_fined) {
 						$tds = $tr->getElementsByTagName('td');
 
-						$btn = $tds[4]->getElementsByTagName('a')[0];
-						if($btn != null) {
-							$attr = $btn->getAttribute('onclick');
-							preg_match('/([^\)]+)\((.*)\)/', $attr, $matches); // Получаем данные из скобок кнопки
+						$btn = $tds[4]->getElementsByTagName('a');
+						if($btn[0] != null) {
+							if($btn[1] != null) {
+								$attr = $btn[1]->getAttribute('onclick');
+								preg_match('/([^\)]+)\((.*)\)/', $attr, $matches); // Получаем данные из скобок кнопки
 
-							$marking = [
-								'id' => intval(explode(',', $matches[2])[0]),
-								'status' => stripos($attr, 'update_zan') !== false ? 0 : (stripos($attr, 'open_zan') !== false ? 1 : -1),
-							];
+								$marking = [
+									'id' => intval(explode(',', $matches[2])[0]),
+									'status' => stripos($attr, 'update_zan') !== false ? 0 : (stripos($attr, 'open_zan') !== false ? 1 : -1),
+									'remote' => $btn[0]->getAttribute('href')
+								];
+							} else {
+								$attr = $btn[0]->getAttribute('onclick');
+								preg_match('/([^\)]+)\((.*)\)/', $attr, $matches); // Получаем данные из скобок кнопки
+
+								$marking = [
+									'id' => intval(explode(',', $matches[2])[0]),
+									'status' => stripos($attr, 'update_zan') !== false ? 0 : (stripos($attr, 'open_zan') !== false ? 1 : -1),
+									'remote' => null,
+								];
+							}
 						} else {
 							$marking = [
 								'id' => 0,

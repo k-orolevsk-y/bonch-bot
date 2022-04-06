@@ -131,9 +131,15 @@
 				$item['status'] = 1000;
 				R::store($item);
 
-				$vkApi->sendMessage("✅ Вы были отмечены на паре $schedule_name.", [
-					'peer_id' => $item['user_id'], 'forward' => []
-				]);
+				if($marking['remote'] != null) {
+					$vkApi->sendMessage("✅ Вы были отмечены на паре $schedule_name.\n📚 Ссылка на онлайн занятие: ${marking['remote']}", [
+						'peer_id' => $item['user_id'], 'forward' => []
+					]);
+				} else {
+					$vkApi->sendMessage("✅ Вы были отмечены на паре $schedule_name.", [
+						'peer_id' => $item['user_id'], 'forward' => []
+					]);
+				}
 			}
 		}
 
