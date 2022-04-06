@@ -36,7 +36,7 @@
 
 			$lk = new LK(intval($object['user_id']));
 			if($lk->auth() != 1) {
-				$vkApi->sendMessage("📛 Нет возможности проверить достоверность данных, вызовите список отметок заново.", [
+				$vkApi->editMessage("📛 Нет возможности проверить достоверность данных, вызовите список отметок заново.", $object['conversation_message_id'], $object['peer_id'], [
 					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Вызвать","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking\" }"},"color":"negative"}]],"inline":true}'
 				]);
 				return false;
@@ -46,7 +46,7 @@
 			$item = $data['items'][$payload['key']];
 
 			if($item == null) {
-				$vkApi->sendMessage("📛 Данные недостоверны, обновите список отметок.", [
+				$vkApi->editMessage("📛 Данные недостоверны, обновите список отметок.", $object['conversation_message_id'], $object['peer_id'], [
 					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking 1\" }"},"color":"negative"}]],"inline":true}'
 				]);
 				return false;
@@ -70,15 +70,27 @@
 			}
 
 			$db = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ? AND `teacher` = ?', [ $object['user_id'], $item['num_with_time'], $payload['date'], $item['teacher'] ]);
-			if($db == null) {
-				$db = R::dispense('schedule');
-				$db['user_id'] = $object['user_id'];
-				$db['date'] = $payload['date'];
-				$db['status'] = 0;
-				$db['num_with_time'] = $item['num_with_time'];
-				$db['teacher'] = $item['teacher'];
-				R::store($db);
+			if($db != null) {
+				$vkApi->get("messages.sendMessageEventAnswer", [
+					'peer_id' => $object['peer_id'],
+					'user_id' => $object['user_id'],
+					'event_id' => $object['event_id'],
+					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "⚡️ Задача на установку отметки уже создана!" ])
+				]);
+
+				$vkApi->sendMessage("📚️ Выберите пары на которых хотите отметиться:", Marking::getKeyboardOrCarousel($type, $data, $object, 0, $payload['date']));
+				$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']], 'delete_for_all' => 1]);
+
+				return true;
 			}
+
+			$db = R::dispense('schedule');
+			$db['user_id'] = $object['user_id'];
+			$db['date'] = $payload['date'];
+			$db['status'] = 0;
+			$db['num_with_time'] = $item['num_with_time'];
+			$db['teacher'] = $item['teacher'];
+			R::store($db);
 
 			$vkApi->get("messages.sendMessageEventAnswer", [
 				'peer_id' => $object['peer_id'],

@@ -2,6 +2,7 @@
 	namespace Me\Korolevsky\BonchBot\Keyboard;
 
 	use Me\Korolevsky\BonchBot\Commands\Marking;
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Interfaces\Keyboard;
@@ -27,9 +28,19 @@
 			}
 			$type = json_decode($user['settings'], true)['type_marking'] == 0 ? "carousel" : "keyboard";
 
-			$db = R::findOne('schedule', 'WHERE `id` = ? AND `user_id` = ?', [ $payload['mark_id'], $object['user_id'] ]);
-			$data = json_decode(R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [ $object['user_id'], 'schedule-'.$payload['date'] ])['data'], true);
+			$lk = new LK($object['user_id']);
+			if($lk->auth() != 1) {
+				$vkApi->get("messages.sendMessageEventAnswer", [
+					'peer_id' => $object['peer_id'],
+					'user_id' => $object['user_id'],
+					'event_id' => $object['event_id'],
+					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "🚫 Произошла техническая ошибка: невозможно получить расписание из ЛК." ])
+				]);
+				return false;
+			}
+			$data = $lk->getSchedule($payload['date']);
 
+			$db = R::findOne('schedule', 'WHERE `id` = ? AND `user_id` = ?', [ $payload['mark_id'], $object['user_id'] ]);
 			if($db == null) {
 				$vkApi->get("messages.sendMessageEventAnswer", [
 					'peer_id' => $object['peer_id'],

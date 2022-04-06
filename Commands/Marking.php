@@ -80,7 +80,6 @@
 
 			$type = json_decode($user['settings'], true)['type_marking'] == 0 ? "carousel" : "keyboard";
 			$vkApi->editMessage("📚️️ Выберите пары на которых хотите отметиться:", $conversation_message_id, $object['peer_id'], self::getKeyboardOrCarousel($type, $data, $object, $conversation_message_id, $date));
-//			$vkApi->sendMessage(self::getKeyboardOrCarousel($type, $data, $object, $conversation_message_id, $date)['template']);
 			return true;
 		}
 

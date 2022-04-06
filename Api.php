@@ -27,7 +27,7 @@
 			$db = Data::DB_INFO;
 			try {
 				R::setup("mysql:host=${db['host']};dbname=${db['dbname']}", $db['user'], $db['pass']);
-			} catch(RedException $e) {
+			} catch(\Exception $e) {
 				die(
 					"Бот столкнулся с критической ошибкой при соединении с базой данных: " . $e->getMessage()
 				);
