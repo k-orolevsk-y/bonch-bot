@@ -61,7 +61,7 @@
 				]);
 				return false;
 			}
-			$api->end(true);
+			
 
 			$messages = json_decode($cache['data'], true);
 			if($messages['sorted_messages'][$payload['target']] == null) {

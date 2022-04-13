@@ -36,8 +36,8 @@
 
 			$lk = new LK(intval($object['user_id']));
 			if($lk->auth() != 1) {
-				$vkApi->editMessage("📛 Нет возможности проверить достоверность данных, вызовите список отметок заново.", $object['conversation_message_id'], $object['peer_id'], [
-					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Вызвать","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking\" }"},"color":"negative"}]],"inline":true}'
+				$vkApi->editMessage("📛 Не удалось получить данные из ЛК, попробуйте ещё раз...", $object['conversation_message_id'], $object['peer_id'], [
+					'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking\", \"update\": '.$object['conversation_message_id'].' }"},"color":"negative"}]],"inline":true}'
 				]);
 				return false;
 			}
@@ -47,7 +47,7 @@
 
 			if($item == null) {
 				$vkApi->editMessage("📛 Данные недостоверны, обновите список отметок.", $object['conversation_message_id'], $object['peer_id'], [
-					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking 1\" }"},"color":"negative"}]],"inline":true}'
+					'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking 1\", \"update\": '.$object['conversation_message_id'].' }"},"color":"negative"}]],"inline":true}'
 				]);
 				return false;
 			}

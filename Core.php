@@ -31,7 +31,7 @@
 			$object['conversation_message_id'] = $object['id'];
 
 			$api = new Api(Data::TOKENS['public'], $object);
-			$api->end(true);
+			
 
 			new NewPost($api->getVkApi(), $object);
 			$api->end();

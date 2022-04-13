@@ -133,6 +133,10 @@
 			return $result;
 		}
 
+		public function download(string $method, array $params): string {
+
+		}
+
 		#[ArrayShape(['count' => "int", 'messages' => "array", 'sorted_messages' => "array"])]
 		public function getMessages(): array|null {
 			$response = [];
@@ -246,6 +250,10 @@
 
 
 			return $response;
+		}
+
+		public function getGroupsMembers() {
+
 		}
 
 		public function setMark(int $id, int $week): mixed {

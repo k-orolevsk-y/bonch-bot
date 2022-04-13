@@ -98,7 +98,7 @@
 					} else {
 						$time = strtotime($date.' '.explode('-', $item['num_with_time'])[1]);
 					}
-					$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ?', [ $object['from_id'], $item['num_with_time'], $date ]);
+					$schedule = R::findOne('schedule', 'WHERE `user_id` = ? AND `num_with_time` = ? AND `date` = ? AND `teacher` = ?', [ $object['from_id'], $item['num_with_time'], $date, $item['teacher'] ]);
 
 					if(iconv_strlen($item['name']) >= 72) {
 						$item['name'] = mb_strcut($item['name'], 0, 69) . "...";

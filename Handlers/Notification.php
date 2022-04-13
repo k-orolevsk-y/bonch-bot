@@ -82,6 +82,12 @@
 							] + Marking::getKeyboardOrCarousel($type, $schedule, ['from_id' => $user['user_id']], 0, $date));
 					}
 				} else {
+					$last_message_id = $vkApi->useMethod("messages", "search", [ 'q' => '🏻 Доброе утро. 📝 По расписанию у Вас сегодня', 'count' => 1, 'peer_id' => $user['user_id'] ])['items'][0]['conversation_message_id'];
+					if(isset($last_message_id)) {
+						$vkApi->get("messages.delete", ['peer_id' => $user['user_id'], 'conversation_message_ids' => [$last_message_id], 'delete_for_all' => 1 ]);
+					}
+
+
 					$vkApi->sendMessage("👋🏻 Добрый вечер.\n📝 По расписанию у Вас завтра " . $this->api->pluralForm($schedule['count'], ['пара', 'пары', 'пар']) . ".\n⚙️ На каких Вас отметить?\n\n🔕 Рассылку о парах можно отключить в профиле.", [
 							'peer_id' => $user['user_id'],
 							'forward' => []

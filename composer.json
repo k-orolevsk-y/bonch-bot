@@ -7,7 +7,9 @@
         "php-webdriver/webdriver": "^1.12",
         "ext-dom": "*",
         "ext-imagick": "*",
-        "ext-iconv": "*"
+        "ext-iconv": "*",
+        "ext-curl": "*",
+        "smalot/pdfparser": "^2.1"
     },
     "license": "MIT",
     "authors": [

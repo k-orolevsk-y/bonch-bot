@@ -49,7 +49,6 @@
 				$conversation_message_id = $payload['update'];
 				$vkApi->editMessage("📘 Получаю скриншот из ЛК...", $conversation_message_id, $object['peer_id']);
 			}
-			$api->end(true);
 
 			$webLK = new WebLK(intval($object['from_id']));
 			$marks = $webLK->getScreenMarks();

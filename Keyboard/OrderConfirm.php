@@ -40,7 +40,7 @@
 			$pass = openssl_decrypt(hex2bin($user['password']), 'AES-128-CBC', Data::ENCRYPT_KEY);
 
 			$vkApi->editMessage("📑 Заказываем справку...", $object['conversation_message_id'], $object['peer_id']);
-			$api->end(true);
+			
 
 			$params = json_encode([
 				'login' => $login,

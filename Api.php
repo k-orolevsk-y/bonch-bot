@@ -20,6 +20,7 @@
 
 			if($need_repetition) {
 				$this->repetitionCheck(0);
+				$this->end(true);
 			}
 		}
 
@@ -110,8 +111,24 @@
 
 		#[NoReturn]
 		public function end($fake = false) {
-			self::repetitionCheck(1);
-			if(!$fake) die('ok');
+			if($fake) {
+				ob_start(); // Отдаем HTTP ответ серверу VK и продолжаем работу скрипта.
+				session_start();
+
+				echo 'ok';
+
+				session_write_close();
+				set_time_limit(0);
+				ignore_user_abort(true);
+				header('Connection: close');
+				header('Content-Length: ' . ob_get_length());
+				ob_end_flush();
+				flush();
+				fastcgi_finish_request();
+			} else {
+				self::repetitionCheck(1);
+				die();
+			}
 		}
 
 		#[NoReturn]
@@ -122,7 +139,7 @@
 
 			$array = explode('/', $exception->getFile());
 			$this->vkApi->sendMessage(
-				"📛 Бот столкнулся с критической ошибкой: " . $exception->getMessage() . PHP_EOL . "Строчка: " . $exception->getLine() . PHP_EOL . "Файл: " . array_pop($array) . PHP_EOL . "TraceBack: " . $exception->getTraceAsString(),
+				"📛 Бот столкнулся с критической ошибкой: " . $exception->getMessage() . PHP_EOL . "Строчка: " . $exception->getLine() . PHP_EOL . "Файл: " . array_pop($array) . PHP_EOL . "TraceBack: " . $exception->getTraceAsString() . PHP_EOL . "VKObject: ".json_encode($this->object),
 				[ 'peer_id' => 171812976, 'forward' => [] ]
 			);
 

@@ -32,7 +32,7 @@
 		public function __destruct() {
 			if(isset($this->driver)) {
 				try {
-					$this->driver->close();
+					$this->driver->quit();
 				} catch(\Exception) {}
 			}
 		}
