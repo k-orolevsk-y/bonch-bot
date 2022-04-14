@@ -19,7 +19,6 @@
 			$this->object = $object;
 
 			if($need_repetition) {
-				$this->repetitionCheck(0);
 				$this->end(true);
 			}
 		}
@@ -56,35 +55,6 @@
 
 			$cases = array (2, 0, 1, 1, 1, 2);
 			return $num.' '.$after[ ($number%100>4 && $number%100<20)? 2: $cases[min($number%10, 5)] ];
-		}
-
-		protected function repetitionCheck(int $status): bool {
-			if($this->object['event_id'] != null) {
-				$conversation_message_id = $this->object['event_id'];
-			} else {
-				$conversation_message_id = $this->object['conversation_message_id'];
-			}
-
-			if($status == 0) {
-				$find = R::findOne('lm', 'WHERE `conversation_message_id` = ? AND `peer_id` = ? AND `completed` = ?', [$conversation_message_id, $this->object['peer_id'], 1]);
-				if($find != null) die('ok');
-
-				$new = R::dispense('lm');
-				$new['conversation_message_id'] = $conversation_message_id;
-				$new['peer_id'] = $this->object['peer_id'];
-				$new['completed'] = 0;
-				R::store($new);
-
-				return true;
-			}
-
-			$end = R::findOne('lm', 'WHERE `conversation_message_id` = ? AND `peer_id` = ?', [$conversation_message_id, $this->object['peer_id']]);
-			if($end == null) return true;
-
-			$end['completed'] = 1;
-			R::store($end);
-
-			return true;
 		}
 
 		public function sendBonchRequest(string $method, array $params): ?array {
@@ -126,7 +96,6 @@
 				flush();
 				fastcgi_finish_request();
 			} else {
-				self::repetitionCheck(1);
 				die();
 			}
 		}
@@ -134,7 +103,8 @@
 		#[NoReturn]
 		public function exceptionHandler($exception) {
 			$this->vkApi->sendMessage("😔 Произошла критическая ошибка.\n🙎🏻‍♂️ [id171812976|Разработчику] уже передана техническая информация.", [
-				'attachment' => 'photo-207206992_467239022'
+				'attachment' => 'photo-207206992_467239022',
+				'forward' => []
 			]);
 
 			$array = explode('/', $exception->getFile());

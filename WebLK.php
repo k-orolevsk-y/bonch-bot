@@ -74,8 +74,9 @@
 		}
 
 		public function getInfo(): array|false {
-			$this->auth();
-			if($this->driver->findElements(WebDriverBy::xpath('//*[@class="badge badge-secondary"]')) == null) {
+			if(!$this->auth()) {
+				return false;
+			} elseif($this->driver->findElements(WebDriverBy::xpath('//*[@class="badge badge-secondary"]')) == null) {
 				return false;
 			}
 

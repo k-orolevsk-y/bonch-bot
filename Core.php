@@ -44,7 +44,7 @@
 			}
 
 			$api = new Api(Data::TOKENS['public'], $object);
-			$payload = (array)$object['payload'];
+			$payload = (array) $object['payload'];
 
 			new DefinitionKeyboard($api, $object, $payload);
 			$api->end();
