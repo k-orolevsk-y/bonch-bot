@@ -100,6 +100,27 @@
 			}
 		}
 
+		public function uploadFile(string $path, int $peer_id): string|bool {
+			try {
+				$address = $this->get("docs.getMessagesUploadServer", ['peer_id' => $peer_id, 'type' => 'doc'])['response']['upload_url'];
+				if($address == null) {
+					throw new Exception(code: 0);
+				}
+				$uploaded_doc = $this->getClient()->getRequest()->upload($address, 'file', $path)['file'];
+				if($uploaded_doc == null) {
+					throw new Exception(code: 1);
+				}
+				$document = $this->get("docs.save", ['file' => $uploaded_doc])['response']['doc'];
+				if($document == null) {
+					throw new Exception(code: 1);
+				}
+			} catch(\Exception) {
+				return false;
+			}
+
+			return "doc${document['owner_id']}_${document['id']}";
+		}
+
 		public function useMethod(string $cat, string $method, array $params = [], bool $return_error_code = false): mixed {
 			$access_token = $params['access_token'] ?? $this->access_token;
 

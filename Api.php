@@ -102,15 +102,33 @@
 
 		#[NoReturn]
 		public function exceptionHandler($exception) {
-			$this->vkApi->sendMessage("😔 Произошла критическая ошибка.\n🙎🏻‍♂️ [id171812976|Разработчику] уже передана техническая информация.", [
+			$this->vkApi->sendMessage("⚠️ При обработке команды произошла ошибка.\nЯ направил сообщение о данной ошибке необходимым людям, они исправят её в скором времени.\n\n⚡️ После исправления ошибки вы получите об этом уведомление в личные сообщения.", [
 				'attachment' => 'photo-207206992_467239022',
 				'forward' => []
 			]);
 
-			$array = explode('/', $exception->getFile());
+			$object = $this->object;
+			$file = explode('/', $exception->getFile());
+			$peer_ids = json_decode(R::findOne('settings', 'WHERE `name` = ?', [ 'chats_logs' ])['value'], true);
+
+			$path = 'Files/'.date('d.m.Y-H:i:s').'-bonchbot-error.log';
+			file_put_contents($path, var_export($exception, true));
+
+			$doc = $this->vkApi->uploadFile($path, 171812976);
+			if(!$doc) {
+				$doc = "https://ssapi.ru/bots/bonch/".$path;
+			} else {
+				unlink($path);
+			}
+
 			$this->vkApi->sendMessage(
-				"📛 Бот столкнулся с критической ошибкой: " . $exception->getMessage() . PHP_EOL . "Строчка: " . $exception->getLine() . PHP_EOL . "Файл: " . array_pop($array) . PHP_EOL . "TraceBack: " . $exception->getTraceAsString() . PHP_EOL . "VKObject: ".json_encode($this->object),
-				[ 'peer_id' => 171812976, 'forward' => [] ]
+				"⚠️ При обработке команды произошла техническая ошибка, информация о ней:\n\nВремя: ".date('d.m.Y H:i:s') ."\nФайл: ".end($file)."\nID чата: ${object['peer_id']}\nID сообщения/эвента: ".($object['event_id'] ?? $object['conversation_message_id']) . "\nПолезная нагрузка: " . ($object['payload'] ?? "NULL") . "\n\nФайл-лог ошибки, предоставлен вместе с сообщением.",
+				[
+					'attachment' => $doc,
+					'peer_ids' => implode(',', $peer_ids),
+					'forward' => [ 'peer_id' => $this->object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']] ],
+					'keyboard' => '{"inline":true,"buttons":[[{"action":{"type":"callback","label":"Ошибка исправлена","payload":"{ \"command\": \"bugfix\", \"user_id\": '.$object['from_id'].', \"time\": '.time().' }"},"color":"positive"}]]}'
+				]
 			);
 
 			die('ok');

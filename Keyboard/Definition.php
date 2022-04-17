@@ -53,6 +53,8 @@
 					return new ScheduleTeacher($api, $object, $payload);
 				case "schedule_img":
 					return new ScheduleImg($api, $object, $payload);
+				case "bugfix":
+					return new BugFix($api, $object, $payload);
 			}
 		}
 
