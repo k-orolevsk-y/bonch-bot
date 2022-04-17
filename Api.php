@@ -114,9 +114,9 @@
 			$peer_ids = json_decode(R::findOne('settings', 'WHERE `name` = ?', [ 'chats_logs' ])['value'], true);
 
 			$path = 'Files/'.date('d.m.Y-H:i:s').'-bonchbot-error.log';
-			file_put_contents($path, var_export($exception, true));
+			file_put_contents(__DIR__.'/'.$path, var_export($exception, true));
 
-			$doc = $this->vkApi->uploadFile($path, 171812976);
+			$doc = $this->vkApi->uploadFile(__DIR__.'/'.$path, 171812976);
 			if(!$doc) {
 				$doc = "https://ssapi.ru/bots/bonch/".$path;
 			} else {
