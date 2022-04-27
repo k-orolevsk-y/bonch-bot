@@ -120,7 +120,7 @@
 			if(!$doc) {
 				$doc = "https://ssapi.ru/bots/bonch/".$path;
 			} else {
-				unlink($path);
+				unlink(__DIR__.'/'.$path);
 			}
 
 			if(!empty($object['peer_id'])) {
@@ -135,7 +135,7 @@
 				);
 			} else {
 				$this->vkApi->sendMessage(
-					"⚠️ При работе обработчика произошла техническая ошибка, информация о ней:\n\nВремя: ".date('d.m.Y H:i:s') ."\nФайл: ".end($file)."\nID чата: ${object['peer_id']}\nID сообщения/эвента: ".($object['event_id'] ?? $object['conversation_message_id']) . "\nПолезная нагрузка: " . ($object['payload'] ?? "NULL") . "\n\nФайл-лог ошибки, предоставлен вместе с сообщением.",
+					"⚠️ При работе обработчика произошла техническая ошибка, информация о ней:\n\nВремя: ".date('d.m.Y H:i:s') ."\nФайл: ".end($file) . "\n\nФайл-лог ошибки, предоставлен вместе с сообщением.",
 					[
 						'forward' => [],
 						'attachment' => $doc,

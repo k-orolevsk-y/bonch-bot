@@ -24,7 +24,7 @@
 				}
 
 				$datetime = strtotime($payload['date']);
-				$schedule = R::getAll('SELECT * FROM `schedule_parse` WHERE `teacher` LIKE ? AND `date` = ? ORDER BY `num_with_time`', [ "%${db['teacher']}%", date('d.m.Y', $datetime) ]);
+				$schedule = R::getAll('SELECT * FROM `schedule_parse` WHERE `teacher` LIKE ? AND `date` = ? ORDER BY `start`', [ "%${db['teacher']}%", date('d.m.Y', $datetime) ]);
 
 				if($schedule == null) {
 					return $vkApi->editMessage("⚡️ У данного преподователя в этот день (".date('d.m.Y', $datetime).") нет пар.", $object['conversation_message_id'], $object['peer_id'], [

@@ -20,7 +20,7 @@
 			$user = R::findOne('users', 'WHERE `user_id` = ?', [$this->user_id]);
 			if($user == null) {
 				return -1;
-			} elseif(date('H') > 2 && date('H') < 3) { // ЛК ложиться в это время, отключаем работу чтобы не было ложных ошибок.
+			} elseif(date('H') >= 2 && date('H') <= 3) { // ЛК ложиться в это время, отключаем работу чтобы не было ложных ошибок.
 				return -2;
 			}
 
@@ -48,7 +48,7 @@
 
 			$ch = curl_init("https://lk.sut.ru/cabinet/project/cabinet/forms/${method}.php?" . http_build_query($params));
 			curl_setopt_array($ch, [
-				CURLOPT_TIMEOUT => 5,
+				CURLOPT_TIMEOUT_MS => 1500,
 				CURLOPT_ENCODING => '',
 				CURLOPT_MAXREDIRS => 10,
 				CURLOPT_HTTPHEADER => [
@@ -67,6 +67,8 @@
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_FOLLOWLOCATION => true,
 				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+				CURLOPT_PROXY => "37.46.128.146:3128",
+				CURLOPT_PROXYTYPE => CURLPROXY_HTTP
 			]);
 			$result = iconv("Windows-1251", "UTF-8", curl_exec($ch));
 			curl_close($ch);
@@ -95,7 +97,7 @@
 
 			$ch = curl_init("https://lk.sut.ru/cabinet/project/cabinet/forms/${method}.php");
 			curl_setopt_array($ch, [
-				CURLOPT_TIMEOUT => 5,
+				CURLOPT_TIMEOUT_MS => 1500,
 				CURLOPT_ENCODING => '',
 				CURLOPT_MAXREDIRS => 10,
 				CURLOPT_HTTPHEADER => [
@@ -115,9 +117,12 @@
 				CURLOPT_FOLLOWLOCATION => true,
 				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 				CURLOPT_POSTFIELDS => http_build_query($params),
+				CURLOPT_PROXY => "37.46.128.146:3128",
+				CURLOPT_PROXYTYPE => CURLPROXY_HTTP
 			]);
 			$result = curl_exec($ch);
 			curl_close($ch);
+
 
 			if($error = curl_errno($ch)) {
 				if($error == 23) { // Если ты не авторизован, ЛК может прислать 23 код ошибки (curl error)
@@ -252,10 +257,6 @@
 			return $response;
 		}
 
-		public function getGroupsMembers() {
-
-		}
-
 		public function setMark(int $id, int $week): mixed {
 			return $this->post('raspisanie', [
 				'open' => 1,
@@ -343,5 +344,64 @@
 			} catch(Exception) {
 				return false;
 			}
+		}
+
+		public function getMarks(): ?array {
+			try {
+				$marks = $this->request("jurnal_dnevnik", [ 'key' => 'vk.com/botbonch' ]); // ЛК запрашивает какой-то key, отправляю тупо ссылку на бота... (прекол над лк)
+
+				$doc = new DOMDocument();
+				$doc->loadHTML($marks);
+				$xpath = new DOMXPath($doc);
+
+				$items = [];
+
+				$thead = $xpath->query('//table[@class="smalltab simple-little-table"]/thead/tr/th');
+				foreach($thead as $key => $th) {
+					if(in_array($key, [0,1]) || empty($th->textContent)) continue; // Скипаем номер недели и дату (или если предмет пустой)...
+
+					$title = iconv('utf-8', 'iso8859-1', $th->textContent);
+					$items[$title] = [];
+				}
+
+				$keys = array_keys($items);
+				$tbody = $xpath->query('//table[@class="smalltab simple-little-table"]/tbody/tr');
+
+				foreach($tbody as $tr) {
+					$date = $tr->getAttribute('date1');
+					if($date == null) {
+						continue;
+					}
+					$date = date('d.m.Y', strtotime($date));
+
+
+					$tds = $tr->getElementsByTagName('td');
+					foreach($tds as $key => $td) {
+						if(in_array($key, [0,1]) || empty($td->textContent)) {
+							continue;
+						}
+
+						$style = $td->getAttribute('style');
+						if($style != null) { // Проверка на пустоту в ячейке
+							continue;
+						}
+
+						// хз че это делает, но оно убирает тупые пробелы от ЛК
+						$string = htmlentities(iconv('utf-8', 'iso8859-1', $td->textContent), null, 'utf-8');
+						$content = str_replace(" ", "", $string);
+						$mark = html_entity_decode($content);
+
+						if($mark == null) {
+							$items[$keys[$key-2]][$date] = null;
+						} else {
+							$items[$keys[$key-2]][$date] = $mark;
+						}
+					}
+				}
+			} catch(\Exception) {
+				return null;
+			}
+
+			return $items;
 		}
 	}

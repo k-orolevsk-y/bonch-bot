@@ -1,5 +1,7 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Handlers;
+
+	require '../Autoload.php';
 	error_reporting(0);
 
 	use RedBeanPHP\R;
@@ -21,9 +23,7 @@
 			if(php_sapi_name() != "cli") die("Hacking attempt!");
 			$this->start_time = microtime(true);
 
-			self::autoload();
-			self::getApi();
-			self::getSchedule();
+			self::init();
 			self::start();
 		}
 
@@ -43,7 +43,7 @@
 				}
 
 				$this->api->getVkApi()->sendMessage(
-					"⚙️ Обработчик автоматической установки отметок завершил работу (".round(microtime(true)-$this->start_time, 3)." сек.) и прислал лог-файл, он прикреплён к сообщению.",
+					"⚙️ Обработчик автоматической установки отметок завершил работу (".round(microtime(true)-$this->start_time, 3)." сек.) и прислал лог-файл, он прикреплён к сообщению.\n\n#handler_asm",
 					[
 						'forward' => [],
 						'attachment' => $doc,
@@ -53,29 +53,14 @@
 			}
 		}
 
-		#[NoReturn]
-		private function autoload() {
-			require '../LK.php';
-			require '../Api.php';
-			require '../Data.php';
-			require '../WebLK.php';
-			require '../VKApi.php';
-			require '../vendor/autoload.php';
-		}
-
-		#[NoReturn]
-		private function getApi() {
+		private function init() {
 			$this->api = new Api(Data::TOKENS['public'], [], false);
 			$this->logs[] = date('[d.m.Y H:i:s]')." Создан экземпляр класса API.";
-		}
 
-		#[NoReturn]
-		private function getSchedule() {
 			$this->schedule = R::getAll("SELECT * FROM `schedule` WHERE `date` = ? AND `status` != ? AND `status` != ?", [ date('d.m.Y'), 1000, -1 ]) ?? [];
 			$this->logs[] = date('[d.m.Y H:i:s]')." Получен необходиый список отметок. (".count($this->schedule).").";
 		}
 
-		#[NoReturn]
 		private function start() {
 			$vkApi = $this->api->getVkApi();
 			foreach($this->schedule as $item) {
@@ -192,7 +177,6 @@
 				$this->logs[] = date('[d.m.Y H:i:s]')." Установлена отметка на паре.";
 			}
 		}
-
 	}
 
 	new AutoSetMark();

@@ -1,6 +1,9 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Handlers;
 
+	require '../Autoload.php';
+	error_reporting(0);
+
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\LK;
 	use Me\Korolevsky\BonchBot\Api;
@@ -17,35 +20,15 @@
 		public function __construct() {
 			if(php_sapi_name() != "cli") die("Hacking attempt!");
 
-			self::autoload();
-			self::getApi();
-			self::getUsers();
+			self::init();
 			self::start();
 		}
 
-		#[NoReturn]
-		private function autoload() {
-			require '../LK.php';
-			require '../Api.php';
-			require '../Data.php';
-			require '../VKApi.php';
-			require '../WebLK.php';
-			require '../vendor/autoload.php';
-			require '../Interfaces/Command.php';
-			require '../Commands/Marking.php';
-		}
-
-		#[NoReturn]
-		private function getApi() {
+		private function init() {
 			$this->api = new Api(Data::TOKENS['public'], [], false);
-		}
-
-		#[NoReturn]
-		private function getUsers() {
 			$this->users = R::getAll('SELECT * FROM `users`');
 		}
 
-		#[NoReturn]
 		private function start() {
 			if(date('H') > 8) {
 				$date = date('d.m.Y', strtotime('+1 day'));

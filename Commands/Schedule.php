@@ -94,7 +94,7 @@
 					return false;
 				}
 			} else {
-				$items = R::getAll('SELECT * FROM `schedule_parse` WHERE `group_id` = ? AND `date` = ? ORDER BY `id`', [ $group_id, $date ]);
+				$items = R::getAll('SELECT * FROM `schedule_parse` WHERE `group_id` = ? AND `date` = ? ORDER BY `start`', [ $group_id, $date ]);
 				$schedule = [ 'count' => count(array_unique(array_column($items, 'num_with_time'))), 'items' => $items ];
 			}
 

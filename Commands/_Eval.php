@@ -2,6 +2,8 @@
 	namespace Me\Korolevsky\BonchBot\Commands;
 
 	use Me\Korolevsky\BonchBot\Api;
+	use Me\Korolevsky\BonchBot\LK;
+	use Me\Korolevsky\BonchBot\WebLK;
 	use ParseError;
 	use RedBeanPHP\R;
 
@@ -40,33 +42,13 @@
 			}
 
 			set_exception_handler(function($e) use ($vkApi, $api, $object) {
-				$error = str_replace("/var/www/ssapi.ru/bots/bonchbot", "", $e->getMessage());
-
-				$vkApi->sendMessage("❎ При выполнении кода произошла ошибка.\n\nОшибка: " . $error);
+				$vkApi->sendMessage("❎ При выполнении кода произошла ошибка.\n\nОшибка: " . var_export($e, true));
 				$api->end();
 			});
 
 			try {
 				$code = implode(' ', array_splice($msg, 1));
 				$code = str_replace([ 'self.', 'this.' ],  '$this->', $code);
-
-
-
-				$banned_functions = [ 'exec', 'curl', 'echo', 'var_dump', 'print_r', 'print', 'file', 'file_exists', 'file_put_contents', 'file_get_contents', 'eval', 'die', 'exit', 'phpinfo', 'require', 'include', 'require_once', 'include_once', 'while', 'for' ];
-				foreach($banned_functions as $banned_function) {
-					if(preg_match("~\w*$banned_function\(\w*~", $code) !== 0) {
-						$vkApi->sendMessage("❌ В коде нельзя использовать $banned_function().");
-						return true;
-					}
-				}
-
-				$banned_words = [ '_SERVER', '_GET', '_POST', 'HTTP_', 'echo', 'print', 'print_r' ];
-				foreach($banned_words as $banned_word) {
-					if(preg_match("~\w*$banned_word\w*~", $code) !== 0) {
-						$vkApi->sendMessage("❌ В коде нельзя использовать $banned_word.");
-						return true;
-					}
-				}
 
 				if(preg_match("~\w*return\w*~", $code) !== 1) {
 					$code = "return $code";
@@ -75,9 +57,7 @@
 
 				$execute = @eval($code);
 			} catch(ParseError $e) {
-				$error = str_replace("/var/www/ssapi.ru/bots/infobot2", "", $e->getMessage());
-
-				$vkApi->sendMessage("❎ При выполнении кода произошла ошибка.\n\nОшибка: " . $error);
+				$vkApi->sendMessage("❎ При выполнении кода произошла ошибка.\n\nОшибка: " . var_export($e, true));
 				return true;
 			}
 
@@ -120,6 +100,25 @@
 			R::store($settings);
 
 			return $in_array ? "Данный чат был удалён из системы логов." : "Данный чат добавлен в систему логов.\n\nОбращаю ваше внимание на то, что в данном чате бот будет отправлять всевозможную информацию о себе, не советую использовать эту функцию в личных сообщениях!";
+		}
+
+		private function getLK(int $user_id = 0): LK {
+			if($user_id == 0) {
+				$user_id = $this->object['from_id'];
+			}
+
+			$lk = new LK($user_id);
+			$lk->auth();
+
+			return $lk;
+		}
+
+		private function getWebLK(int $user_id = 0): WebLK {
+			if($user_id == 0) {
+				$user_id = $this->object['from_id'];
+			}
+
+			return new WebLK($user_id);
 		}
 
 	}

@@ -4,11 +4,11 @@
 	use Imagick;
 	use ImagickDraw;
 	use ImagickPixel;
+	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use Me\Korolevsky\BonchBot\Interfaces\Keyboard;
 	use Me\Korolevsky\BonchBot\LK;
-	use RedBeanPHP\R;
 
 	class ScheduleImg implements Keyboard {
 
@@ -71,7 +71,7 @@
 					]);
 				}
 			} else {
-				$items = R::getAll('SELECT * FROM `schedule_parse` WHERE `group_id` = ? AND `date` = ? ORDER BY `id`', [ $group_id, $date ]);
+				$items = R::getAll('SELECT * FROM `schedule_parse` WHERE `group_id` = ? AND `date` = ? ORDER BY `start`', [ $group_id, $date ]);
 				$schedule = [ 'count' => count(array_unique(array_column($items, 'num_with_time'))), 'items' => $items ];
 			}
 
@@ -81,6 +81,12 @@
 				'event_id' => $object['event_id'],
 				'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "🖼 Формируем расписание картинкой, скоро отправим!" ])
 			]);
+
+			foreach($schedule['items'] as $key => $lesson) {
+				if(iconv_strlen($lesson['teacher']) > 40) {
+					$schedule['items'][$key]['teacher'] = mb_strcut($lesson['teacher'], 0, 39) . "...";
+				}
+			}
 
 			$img = $this->createImage($schedule, $payload['time'], R::findOne('groups', 'WHERE `id` = ?', [ $group_id ])['name']);
 			try {
@@ -99,7 +105,7 @@
 				return $vkApi->sendMessage('😔 Не удалось загрузить фотографию расписания :(');
 			}
 
-			$text = $vkApi->useMethod("messages", "getByConversationMessageId", [ 'peer_id' => $object['peer_id'], 'conversation_message_ids' => $object['conversation_message_id'] ])['items'][0]['text'];
+			$text = explode("\n\n", $vkApi->useMethod("messages", "getByConversationMessageId", [ 'peer_id' => $object['peer_id'], 'conversation_message_ids' => $object['conversation_message_id'] ])['items'][0]['text'])[0];
 			$keyboard = '{"buttons":[[{"action":{"type":"callback","label":"⬅️ '.date('d.m', $payload['time']-86400).'","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $payload['time']-86400).'\", \"update\": 1 }"},"color":"primary"},{"action":{"type":"callback","label":"Сегодня","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', strtotime('today')).'\", \"update\": 1 }"},"color":"positive"},{"action":{"type":"callback","label":"'.date('d.m', $payload['time']+86400).' ➡️","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule '.date('d.m.Y', $payload['time']+86400).'\", \"update\": 1 }"},"color":"primary"}],[{"action":{"type":"callback","label":"🔍 Поиск по преподователю","payload":"{ \"command\": \"schedule_teacher\", \"action\": 0 }"},"color":"secondary"}]],"inline":true}';
 
 			return $vkApi->editMessage($text, $object['conversation_message_id'], $object['peer_id'], [ 'attachment' => $attachment, 'keyboard' => $keyboard ]);

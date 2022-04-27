@@ -1,6 +1,7 @@
 <?php
 	namespace Me\Korolevsky\BonchBot;
 
+	use Facebook\WebDriver\Remote\WebDriverCapabilityType;
 	use RedBeanPHP\R;
 	use Facebook\WebDriver\WebDriverBy;
 	use Facebook\WebDriver\Chrome\ChromeDriver;
@@ -40,7 +41,14 @@
 		protected function createChromeDriver() {
 			$options = new ChromeOptions();
 			$options->addArguments(array('--no-sandbox', '--headless', '--incognito', 'window-size=1720,2880', '--start-maximized'));
-			$capabilities = DesiredCapabilities::chrome();
+			$capabilities = new DesiredCapabilities([
+				WebDriverCapabilityType::BROWSER_NAME => 'chrome',
+				WebDriverCapabilityType::PROXY => [
+					'proxyType' => 'manual',
+					'httpProxy' => '37.46.128.146:3128',
+					'sslProxy' => '37.46.128.146:3128',
+				],
+			]);
 			$capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
 
 			putenv('WEBDRIVER_CHROME_DRIVER=/usr/lib/chromium-browser/chromedriver');
