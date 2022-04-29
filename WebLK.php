@@ -43,11 +43,6 @@
 			$options->addArguments(array('--no-sandbox', '--headless', '--incognito', 'window-size=1720,2880', '--start-maximized'));
 			$capabilities = new DesiredCapabilities([
 				WebDriverCapabilityType::BROWSER_NAME => 'chrome',
-				WebDriverCapabilityType::PROXY => [
-					'proxyType' => 'manual',
-					'httpProxy' => '37.46.128.146:3128',
-					'sslProxy' => '37.46.128.146:3128',
-				],
 			]);
 			$capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
 

@@ -24,7 +24,7 @@
 				return -2;
 			}
 
-			$request = self::request("news", cookie: openssl_decrypt(hex2bin($user['cookie']), 'AES-128-CBC', Data::ENCRYPT_KEY) ?? "");
+			$request = self::request("profil", cookie: openssl_decrypt(hex2bin($user['cookie']), 'AES-128-CBC', Data::ENCRYPT_KEY) ?? "");
 			if($request === false) {
 				$webLK = new WebLK($this->user_id);
 				$cookie = $webLK->getCookie();
@@ -67,8 +67,6 @@
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_FOLLOWLOCATION => true,
 				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-				CURLOPT_PROXY => "37.46.128.146:3128",
-				CURLOPT_PROXYTYPE => CURLPROXY_HTTP
 			]);
 			$result = iconv("Windows-1251", "UTF-8", curl_exec($ch));
 			curl_close($ch);
@@ -82,6 +80,8 @@
 
 				return $error;
 			} elseif($result == "У Вас нет прав доступа. Или необходимо перезагрузить приложение..") {
+				return false;
+			} elseif(stripos($result, "index.php?login=no")) {
 				return false;
 			} elseif($result === false) {
 				$result = null;
@@ -117,8 +117,6 @@
 				CURLOPT_FOLLOWLOCATION => true,
 				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 				CURLOPT_POSTFIELDS => http_build_query($params),
-				CURLOPT_PROXY => "37.46.128.146:3128",
-				CURLOPT_PROXYTYPE => CURLPROXY_HTTP
 			]);
 			$result = curl_exec($ch);
 			curl_close($ch);
@@ -131,15 +129,13 @@
 				return $error;
 			} elseif($result == "У Вас нет прав доступа. Или необходимо перезагрузить приложение..") {
 				return false;
+			} elseif(stripos($result, "index.php?login=no")) {
+				return false;
 			} elseif($result === false) {
 				$result = null;
 			}
 
 			return $result;
-		}
-
-		public function download(string $method, array $params): string {
-
 		}
 
 		#[ArrayShape(['count' => "int", 'messages' => "array", 'sorted_messages' => "array"])]
@@ -348,7 +344,7 @@
 
 		public function getMarks(): ?array {
 			try {
-				$marks = $this->request("jurnal_dnevnik", [ 'key' => 'vk.com/botbonch' ]); // ЛК запрашивает какой-то key, отправляю тупо ссылку на бота... (прекол над лк)
+				$marks = $this->request("jurnal_dnevnik", [ 'key' => '6119' ]); // ЛК запрашивает какой-то key, отправляю тупо ссылку на бота... (прекол над лк)
 
 				$doc = new DOMDocument();
 				$doc->loadHTML($marks);

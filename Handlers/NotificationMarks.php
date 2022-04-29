@@ -41,8 +41,11 @@
 				if($lk->auth() != 1) continue;
 
 				$marks = $lk->getMarks();
-				$marks_db = R::findOne('marks', 'WHERE `user_id` = ?', [ $user['user_id'] ]);
+				if($marks == null) {
+					continue;
+				}
 
+				$marks_db = R::findOne('marks', 'WHERE `user_id` = ?', [ $user['user_id'] ]);
 				if($marks_db == null) {
 					$marks_db = R::dispense('marks');
 					$marks_db['user_id'] = $user['user_id'];
