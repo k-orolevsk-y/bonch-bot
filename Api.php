@@ -125,12 +125,12 @@
 
 			if(!empty($object['peer_id'])) {
 				$this->vkApi->sendMessage(
-					"⚠️ При обработке команды произошла техническая ошибка, информация о ней:\n\nВремя: ".date('d.m.Y H:i:s') ."\nФайл: ".end($file)."\nID чата: ${object['peer_id']}\nID сообщения/эвента: ".($object['event_id'] ?? $object['conversation_message_id']) . "\nПолезная нагрузка: " . ($object['payload'] ?? "NULL") . "\n\nФайл-лог ошибки, предоставлен вместе с сообщением.",
+					"⚠️ При обработке команды произошла техническая ошибка, информация о ней:\n\nВремя: ".date('d.m.Y H:i:s') ."\nФайл: ".end($file)."\nID чата: ${object['peer_id']}\nID сообщения/эвента: ".($object['event_id'] ?? $object['conversation_message_id']) . "\nПолезная нагрузка: " . (isset($object['payload']) ? json_encode($object['payload']) : "NULL") . "\n\nФайл-лог ошибки, предоставлен вместе с сообщением.",
 					[
+						'forward' => [],
 						'attachment' => $doc,
 						'peer_ids' => implode(',', $peer_ids),
-						'forward' => [ 'peer_id' => $this->object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']] ],
-						'keyboard' => '{"inline":true,"buttons":[[{"action":{"type":"callback","label":"Ошибка исправлена","payload":"{ \"command\": \"bugfix\", \"user_id\": '.$object['from_id'].', \"time\": '.time().' }"},"color":"positive"}]]}'
+						'keyboard' => '{"inline":true,"buttons":[[{"action":{"type":"callback","label":"Ошибка исправлена","payload":"{ \"command\": \"bugfix\", \"user_id\": '.($object['user_id'] ?? $object['from_id']).', \"time\": '.time().' }"},"color":"positive"}]]}'
 					]
 				);
 			} else {

@@ -1,6 +1,7 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Keyboard;
 
+	use Exception;
 	use Imagick;
 	use ImagickDraw;
 	use ImagickPixel;
@@ -89,6 +90,10 @@
 			}
 
 			$img = $this->createImage($schedule, $payload['time'], R::findOne('groups', 'WHERE `id` = ?', [ $group_id ])['name']);
+			if($img == null) {
+				return $vkApi->sendMessage('😔 Не удалось загрузить фотографию расписания :(');
+			}
+
 			try {
 				$address = $vkApi->getClient()->photos()->getMessagesUploadServer(Data::TOKENS['public']);
 				$photo = $vkApi->getClient()->getRequest()->upload($address['upload_url'], 'photo', $img);
@@ -100,7 +105,7 @@
 
 				$attachment = "photo${response_save_photo['owner_id']}_${response_save_photo['id']}_${response_save_photo['access_key']}";
 				unlink($img);
-			} catch(\Exception) {
+			} catch(Exception) {
 				unlink($img);
 				return $vkApi->sendMessage('😔 Не удалось загрузить фотографию расписания :(');
 			}
@@ -261,7 +266,7 @@
 
 				$filename = 'Files/'.uniqid().'.png';
 				$img->writeImage($filename);
-			} catch(\Exception) {
+			} catch(Exception) {
 				return null;
 			}
 

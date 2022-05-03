@@ -41,6 +41,7 @@
 		protected function createChromeDriver() {
 			$options = new ChromeOptions();
 			$options->addArguments(array('--no-sandbox', '--headless', '--incognito', 'window-size=1720,2880', '--start-maximized'));
+
 			$capabilities = new DesiredCapabilities([
 				WebDriverCapabilityType::BROWSER_NAME => 'chrome',
 			]);
@@ -48,12 +49,12 @@
 
 			putenv('WEBDRIVER_CHROME_DRIVER=/usr/lib/chromium-browser/chromedriver');
 			$this->driver = ChromeDriver::start($capabilities);
+			$this->driver->manage()->timeouts()->pageLoadTimeout(2);
 		}
 
 		private function auth(): bool {
-			$this->driver->get("https://lk.sut.ru/");
-
 			try {
+				$this->driver->get("https://lk.sut.ru/");
 				$this->driver->wait(10, 25)->until(function(ChromeDriver $driver) {
 					return $driver->findElements(WebDriverBy::xpath('//*[@id="users"]')) != null;
 				});

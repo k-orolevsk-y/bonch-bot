@@ -59,13 +59,13 @@
 							$mark_db = $marks_db_arr[$lesson][$date];
 							if($mark_db == null) {
 								$teacher = $this->getTeacher(intval($user['group_id']), $date, $lesson);
-								$vkApi->sendMessage("🔔 Вам выставлена оценка по предмету $lesson!\n🙇🏻 Преподаватель: [club$group_id|$teacher]\n📝 Оценка: [club$group_id|$mark]", [
+								$vkApi->sendMessage("🔔 Вам выставлена оценка по предмету [club$group_id|$lesson] за [club$group_id|$date]!\n🙇🏻 Преподаватель: [club$group_id|$teacher]\n📝 Оценка: [club$group_id|$mark]", [
 									'peer_id' => $user['user_id'],
 									'forward' => []
 								]);
 							} elseif($mark_db != $mark) {
 								$teacher = $this->getTeacher(intval($user['group_id']), $date, $lesson);
-								$vkApi->sendMessage("🔔 Вам изменена оценка по предмету $lesson!\n🙇🏻 Преподаватель: [club$group_id|$teacher]\n📝 Оценка: [club$group_id|$mark_db ➡️ $mark]", [
+								$vkApi->sendMessage("🔔 Вам изменена оценка по предмету [club$group_id|$lesson] за [club$group_id|$date]!\n🙇🏻 Преподаватель: [club$group_id|$teacher]\n📝 Оценка: [club$group_id|$mark_db ➡️ $mark]", [
 									'peer_id' => $user['user_id'],
 									'forward' => []
 								]);
@@ -87,7 +87,9 @@
 
 			$teachers = [];
 			foreach($schedule as $lesson) {
-				$teachers[] = $lesson['teacher'];
+				if(!in_array($lesson['teacher'], $teachers)) {
+					$teachers[] = $lesson['teacher'];
+				}
 			}
 
 			return implode(' / ', $teachers);
