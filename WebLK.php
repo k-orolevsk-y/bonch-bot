@@ -1,12 +1,13 @@
 <?php
 	namespace Me\Korolevsky\BonchBot;
 
-	use Facebook\WebDriver\Remote\WebDriverCapabilityType;
+	use Exception;
 	use RedBeanPHP\R;
 	use Facebook\WebDriver\WebDriverBy;
 	use Facebook\WebDriver\Chrome\ChromeDriver;
 	use Facebook\WebDriver\Chrome\ChromeOptions;
 	use Facebook\WebDriver\Remote\DesiredCapabilities;
+	use Facebook\WebDriver\Remote\WebDriverCapabilityType;
 
 	class WebLK {
 
@@ -32,9 +33,9 @@
 
 		public function __destruct() {
 			if(isset($this->driver)) {
-				try {
+				try { // Пробуем завершить вебдрайвер, чтобы он не оставался в фоне и не грузил оперативку на сервере
 					$this->driver->quit();
-				} catch(\Exception) {}
+				} catch(Exception) {}
 			}
 		}
 
@@ -47,18 +48,22 @@
 			]);
 			$capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
 
-			putenv('WEBDRIVER_CHROME_DRIVER=/usr/lib/chromium-browser/chromedriver');
-			$this->driver = ChromeDriver::start($capabilities);
-			$this->driver->manage()->timeouts()->pageLoadTimeout(2);
+			try { // Обертка в try {} catch {} защищает в случае неудачного старта вебдрайвера
+				putenv('WEBDRIVER_CHROME_DRIVER=/usr/lib/chromium-browser/chromedriver');
+				$this->driver = ChromeDriver::start($capabilities);
+				$this->driver->manage()->timeouts()->pageLoadTimeout(2); // В случае падений ЛК таймаут поможет от "вечной" работы скрипта
+			} catch(Exception) {}
 		}
 
 		private function auth(): bool {
+			if(empty($this->driver)) return false;
+
 			try {
 				$this->driver->get("https://lk.sut.ru/");
 				$this->driver->wait(10, 25)->until(function(ChromeDriver $driver) {
 					return $driver->findElements(WebDriverBy::xpath('//*[@id="users"]')) != null;
 				});
-			} catch(\Exception) {
+			} catch(Exception) {
 				return false;
 			}
 
@@ -70,7 +75,7 @@
 				$this->driver->wait(10, 25)->until(function(ChromeDriver $driver) {
 					return $driver->findElements(WebDriverBy::xpath('//*[@class="badge badge-secondary"]')) != null;
 				});
-			} catch(\Exception) {
+			} catch(Exception) {
 				return false;
 			}
 
@@ -93,7 +98,7 @@
 				'name' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[1]/tbody/tr[2]/td'))->getText(),
 				'birthday' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[1]/tbody/tr[3]/td'))->getText(),
 				'group' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[2]/tbody/tr[7]/td'))->getText(),
-				'cookie' => "miden=".$this->driver->manage()->getCookieNamed('miden')['value'].";uid=".$this->driver->manage()->getCookieNamed('uid')['value']
+				'cookie' => "miden=".$this->driver->manage()->getCookieNamed('miden')['value'].";uid=".$this->driver->manage()->getCookieNamed('uid')['value'],
 			];
 		}
 
@@ -106,7 +111,9 @@
 		}
 
 		public function getScreenMarks(): ?string {
-			$this->auth();
+			if(!$this->auth()) {
+				return null;
+			}
 
 			try {
 				$this->driver->wait(2, 25)->until(function(ChromeDriver $driver) {
@@ -125,7 +132,7 @@
 
 				$name = uniqid();
 				$this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table'))->takeElementScreenshot("Files/$name.png");
-			} catch(\Exception) {
+			} catch(Exception) {
 				return null;
 			}
 

@@ -113,7 +113,11 @@
 			return $lk;
 		}
 
-		private function getWebLK(int $user_id = 0): WebLK {
+		private function getWebLK(int $user_id = 0, string $login = null, string $password = null): WebLK {
+			if(isset($login) && isset($password)) {
+				return new WebLK(null, $login, $password);
+			}
+
 			if($user_id == 0) {
 				$user_id = $this->object['from_id'];
 			}

@@ -125,7 +125,10 @@
 			if($error = curl_errno($ch)) {
 				if($error == 23) { // Если ты не авторизован, ЛК может прислать 23 код ошибки (curl error)
 					return false;
+				} elseif($error == 28) {
+					return null;
 				}
+
 				return $error;
 			} elseif($result == "У Вас нет прав доступа. Или необходимо перезагрузить приложение..") {
 				return false;
@@ -203,7 +206,7 @@
 			return html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])) ?? "";
 		}
 
-		public function getFilesGroups(): array|null {
+		public function getFilesGroup(): array|null {
 			$response = [];
 			$page = 1;
 
@@ -212,13 +215,41 @@
 				$files = $this->request("files_group_pr", [ 'page' => $page ]);
 				if(str_contains($files, "Файлов пока нет.")) break;
 
+				$doc = new DOMDocument();
+				$doc->loadHTML($files);
+				$xpath = new DOMXPath($doc);
+
+				$table = $xpath->query('//table[@id="mytable"]/tbody/tr');
+				foreach($table as $tr) {
+					$id = str_replace('tr_', '', $tr->getAttribute('id'));
+					if(str_starts_with($id, "show")) continue;
+
+					$tds = $tr->getElementsByTagName('td');
+					$files = [];
+
+					foreach($tds[5]->getElementsByTagName('a') as $file) {
+						$files[] = $file->getAttribute('href');
+					}
+
+					$response[] = [
+						'id' => intval($id),
+						'sender' => iconv('utf-8', 'iso8859-1', $tds[1]->textContent),
+						'time' => strtotime($tds[2]->textContent),
+						'title' => iconv('utf-8', 'iso8859-1', $tds[3]->textContent),
+						'text' => iconv('utf-8', 'iso8859-1', $tds[4]->textContent),
+						'files' => $files
+					];
+				}
+
 				$page += 1;
 			}
+
+			return $response;
 		}
 
 		public function getNewMessages(): array|null {
 			$messages = $this->request("message");
-			if(empty($messages)) return null;
+			if($messages == null) return null;
 
 			$doc = new DOMDocument();
 			$doc->loadHTML($messages);
@@ -274,6 +305,10 @@
 				$week = (($days / 7) - floor($days / 7) > 0.65 ? round($days / 7) : floor($days / 7)) + 1;
 
 				$schedule = $this->request("raspisanie", ['week' => $week]);
+				if($schedule == null) {
+					return false;
+				}
+
 				$doc = new DOMDocument();
 				$doc->loadHTML($schedule);
 				$xpath = new DOMXPath($doc);
@@ -344,7 +379,10 @@
 
 		public function getMarks(): ?array {
 			try {
-				$marks = $this->request("jurnal_dnevnik", [ 'key' => '6119' ]); // ЛК запрашивает какой-то key, отправляю тупо ссылку на бота... (прекол над лк)
+				$marks = $this->request("jurnal_dnevnik", [ 'key' => '6119' ]); // ЛК запрашивает какой-то key, отправляю туда рандомное значение из исходного кода ЛК
+				if($marks == null) {
+					return null;
+				}
 
 				$doc = new DOMDocument();
 				$doc->loadHTML($marks);
