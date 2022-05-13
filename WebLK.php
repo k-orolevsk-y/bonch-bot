@@ -89,17 +89,21 @@
 				return false;
 			}
 
-			$this->driver->findElement(WebDriverBy::xpath('//img[@onclick="openpage(\'profil.php\')"]'))->click();
-			$this->driver->wait(3, 25)->until(function(ChromeDriver $driver) {
-				return $driver->findElements(WebDriverBy::xpath('//*[@id="rightpanel"]/table[1]/tbody/tr[2]/td')) != null;
-			});
+			try {
+				$this->driver->findElement(WebDriverBy::xpath('//img[@onclick="openpage(\'profil.php\')"]'))->click();
+				$this->driver->wait(3, 25)->until(function(ChromeDriver $driver) {
+					return $driver->findElements(WebDriverBy::xpath('//*[@id="rightpanel"]/table[1]/tbody/tr[2]/td')) != null;
+				});
 
-			return [
-				'name' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[1]/tbody/tr[2]/td'))->getText(),
-				'birthday' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[1]/tbody/tr[3]/td'))->getText(),
-				'group' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[2]/tbody/tr[7]/td'))->getText(),
-				'cookie' => "miden=".$this->driver->manage()->getCookieNamed('miden')['value'].";uid=".$this->driver->manage()->getCookieNamed('uid')['value'],
-			];
+				return [
+					'name' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[1]/tbody/tr[2]/td'))->getText(),
+					'birthday' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[1]/tbody/tr[3]/td'))->getText(),
+					'group' => $this->driver->findElement(WebDriverBy::xpath('//*[@id="rightpanel"]/table[2]/tbody/tr[7]/td'))->getText(),
+					'cookie' => "miden=".$this->driver->manage()->getCookieNamed('miden')['value'].";uid=".$this->driver->manage()->getCookieNamed('uid')['value'],
+				];
+			} catch(Exception) {
+				return false;
+			}
 		}
 
 		public function getCookie(): ?string {
