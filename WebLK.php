@@ -107,7 +107,11 @@
 				return null;
 			}
 
-			return "miden=".$this->driver->manage()->getCookieNamed('miden')['value'].";uid=".$this->driver->manage()->getCookieNamed('uid')['value'];
+			try { // В 4 утра умирает вебдрайвер, по причине падения ЛК, для того чтобы бот не улетал в ошибку обворачиваем данный код в try {} catch {}
+				return "miden=".$this->driver->manage()->getCookieNamed('miden')['value'].";uid=".$this->driver->manage()->getCookieNamed('uid')['value'];
+			} catch(Exception) {
+				return null;
+			}
 		}
 
 		public function getScreenMarks(): ?string {
