@@ -14,18 +14,19 @@
 
 		public function __construct(int $user_id) {
 			$this->user_id = $user_id;
+			define('BONCHBOT_LK_ERROR_TIMEOUT', rand()); // Объявляем глоабльную переменную на ошибку ЛК связанную с падением, чтобы отлавливать её..
 		}
 
 		public function auth(): int {
 			$user = R::findOne('users', 'WHERE `user_id` = ?', [$this->user_id]);
 			if($user == null) {
 				return -1;
-			} elseif(date('H') >= 2 && date('H') <= 3) { // ЛК ложиться в это время, отключаем работу чтобы не было ложных ошибок.
-				return -2;
 			}
 
 			$request = self::request("profil", cookie: openssl_decrypt(hex2bin($user['cookie']), 'AES-128-CBC', Data::ENCRYPT_KEY) ?? "");
-			if($request === false) {
+			if($request === BONCHBOT_LK_ERROR_TIMEOUT) {
+				return -2; // ЛК в канаве
+			} elseif($request === false) {
 				$webLK = new WebLK($this->user_id);
 				$cookie = $webLK->getCookie();
 
@@ -75,7 +76,7 @@
 				if($error == 23) { // Если ты не авторизован, ЛК может прислать 23 код ошибки (curl error)
 					return false;
 				} elseif($error == 28) {
-					return null;
+					return BONCHBOT_LK_ERROR_TIMEOUT;
 				}
 
 				return $error;
@@ -84,7 +85,7 @@
 			} elseif(stripos($result, "index.php?login=no")) {
 				return false;
 			} elseif($result === false) {
-				$result = null;
+				$result = "";
 			}
 
 			return $result;
@@ -126,7 +127,7 @@
 				if($error == 23) { // Если ты не авторизован, ЛК может прислать 23 код ошибки (curl error)
 					return false;
 				} elseif($error == 28) {
-					return null;
+					return BONCHBOT_LK_ERROR_TIMEOUT;
 				}
 
 				return $error;
@@ -135,7 +136,7 @@
 			} elseif(stripos($result, "index.php?login=no")) {
 				return false;
 			} elseif($result === false) {
-				$result = null;
+				$result = "";
 			}
 
 			return $result;
@@ -148,6 +149,10 @@
 
 			while(true) {
 				$messages = $this->request("message", $params);
+				if($messages == null) {
+					return null;
+				}
+
 				if(strpos($messages, "Сообщений не найдено")) {
 					if($params['type'] == 'in') {
 						$params = [
@@ -284,7 +289,7 @@
 			return $response;
 		}
 
-		public function setMark(int $id, int $week): mixed {
+		public function setMark(int $id, int $week): string|int|bool|null {
 			return $this->post('raspisanie', [
 				'open' => 1,
 				'rasp' => $id,
@@ -432,10 +437,31 @@
 						}
 					}
 				}
-			} catch(\Exception) {
+			} catch(Exception) {
 				return null;
 			}
 
 			return $items;
 		}
+
+		public function getOnlyMarks(): ?array {
+			$marks = $this->getMarks();
+			if($marks == null) {
+				return null;
+			}
+
+			$result = [];
+			foreach($marks as $array_marks) {
+				foreach($array_marks as $mark) {
+					$result['pass'] += preg_match_all('%Н%', $mark);
+					$result['bad'] += preg_match_all('%2%', $mark);
+					$result['not_bad'] += preg_match_all('%3%', $mark);
+					$result['good'] += preg_match_all('%4%', $mark);
+					$result['well'] += preg_match_all('%5%', $mark);
+				}
+			}
+
+			return $result;
+		}
+
 	}

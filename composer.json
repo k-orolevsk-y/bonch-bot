@@ -9,6 +9,7 @@
         "ext-imagick": "*",
         "ext-iconv": "*",
         "ext-curl": "*",
+        "ext-openssl": "*",
         "smalot/pdfparser": "^2.1"
     },
     "license": "MIT",
