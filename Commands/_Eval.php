@@ -108,7 +108,10 @@
 			}
 
 			$lk = new LK($user_id);
-			$lk->auth();
+			$auth = $lk->auth();
+			if($auth != 1) {
+				throw new \Exception("LK Pidoras: $auth");
+			}
 
 			return $lk;
 		}

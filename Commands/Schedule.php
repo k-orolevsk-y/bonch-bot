@@ -90,7 +90,9 @@
 
 				$schedule = $lk->getSchedule($date);
 				if($schedule == null) {
-					$vkApi->editMessage("🪦 Не удалось получить расписание из личного кабинета.", $conversation_message_id, $object['peer_id']);
+					$vkApi->editMessage("🪦 Не удалось получить расписание из личного кабинета.\n💡 Вы можете временно изменить настройку расписания, чтобы бот получал его с сайта:", $conversation_message_id, $object['peer_id'], [
+						'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Настройки профиля","payload":"{ \"command\": \"settings\", \"for\": '.$object['from_id'].' }"},"color":"negative"}]],"inline":true}'
+					]);
 					return false;
 				}
 			} else {
