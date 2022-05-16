@@ -53,25 +53,25 @@
 				if($date == date('d.m.Y')) {
 					$marking = R::count('schedule', 'WHERE `user_id` = ? AND `date` = ?', [ $user['user_id'], $date ]);
 					if($marking < 1) {
-						$last_message_id = $vkApi->useMethod("messages", "search", [ 'q' => '🏻 Добрый вечер. 📝 По расписанию у Вас завтра', 'count' => 1, 'peer_id' => $user['user_id'] ])['items'][0]['conversation_message_id'];
+						$last_message_id = $vkApi->useMethod("messages", "search", [ 'q' => '👋🏻 Добрый вечер. По расписанию у Вас завтра', 'count' => 1, 'peer_id' => $user['user_id'] ])['items'][0]['conversation_message_id'];
 						if(isset($last_message_id)) {
 							$vkApi->get("messages.delete", ['peer_id' => $user['user_id'], 'conversation_message_ids' => [$last_message_id], 'delete_for_all' => 1 ]);
 						}
 
 
-						$vkApi->sendMessage("👋🏻 Доброе утро.\n📝 По расписанию у Вас сегодня " . $this->api->pluralForm($schedule['count'], ['пара', 'пары', 'пар']) . ".\n⚙️ На каких Вас отметить?\n\n🔕 Рассылку о парах можно отключить в профиле.", [
+						$vkApi->sendMessage("👋🏻 Доброе утро. По расписанию у Вас сегодня " . $this->api->pluralForm($schedule['count'], ['пара', 'пары', 'пар']) . ".\n📚️ Выберите пары, на которых необходимо отметиться:", [
 								'peer_id' => $user['user_id'],
 								'forward' => []
 							] + Marking::getKeyboardOrCarousel($type, $schedule, ['from_id' => $user['user_id']], 0, $date));
 					}
 				} else {
-					$last_message_id = $vkApi->useMethod("messages", "search", [ 'q' => '🏻 Доброе утро. 📝 По расписанию у Вас сегодня', 'count' => 1, 'peer_id' => $user['user_id'] ])['items'][0]['conversation_message_id'];
+					$last_message_id = $vkApi->useMethod("messages", "search", [ 'q' => '👋🏻 Доброе утро. По расписанию у Вас сегодня', 'count' => 1, 'peer_id' => $user['user_id'] ])['items'][0]['conversation_message_id'];
 					if(isset($last_message_id)) {
 						$vkApi->get("messages.delete", ['peer_id' => $user['user_id'], 'conversation_message_ids' => [$last_message_id], 'delete_for_all' => 1 ]);
 					}
 
 
-					$vkApi->sendMessage("👋🏻 Добрый вечер.\n📝 По расписанию у Вас завтра " . $this->api->pluralForm($schedule['count'], ['пара', 'пары', 'пар']) . ".\n⚙️ На каких Вас отметить?\n\n🔕 Рассылку о парах можно отключить в профиле.", [
+					$vkApi->sendMessage("👋🏻 Добрый вечер. По расписанию у Вас завтра " . $this->api->pluralForm($schedule['count'], ['пара', 'пары', 'пар']) . ".\n📚️ Выберите пары, на которых необходимо отметиться:", [
 							'peer_id' => $user['user_id'],
 							'forward' => []
 						] + Marking::getKeyboardOrCarousel($type, $schedule, ['from_id' => $user['user_id']], 0, $date));

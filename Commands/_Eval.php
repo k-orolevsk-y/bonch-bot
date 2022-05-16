@@ -1,11 +1,12 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Commands;
 
+	use Exception;
+	use ParseError;
+	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\LK;
 	use Me\Korolevsky\BonchBot\WebLK;
-	use ParseError;
-	use RedBeanPHP\R;
 
 	class _Eval {
 
@@ -102,6 +103,9 @@
 			return $in_array ? "Данный чат был удалён из системы логов." : "Данный чат добавлен в систему логов.\n\nОбращаю ваше внимание на то, что в данном чате бот будет отправлять всевозможную информацию о себе, не советую использовать эту функцию в личных сообщениях!";
 		}
 
+		/**
+		 * @throws Exception
+		 */
 		private function getLK(int $user_id = 0): LK {
 			if($user_id == 0) {
 				$user_id = $this->object['from_id'];
@@ -110,7 +114,7 @@
 			$lk = new LK($user_id);
 			$auth = $lk->auth();
 			if($auth != 1) {
-				throw new \Exception("LK Pidoras: $auth");
+				throw new Exception("LK Pidoras: $auth");
 			}
 
 			return $lk;
@@ -126,6 +130,21 @@
 			}
 
 			return new WebLK($user_id);
+		}
+
+		public function getUser(int $user_id): ?array {
+			$user = R::findOne('users', 'WHERE `user_id` = ?', [ $user_id ]);
+			if($user_id == null) {
+				return null;
+			}
+
+			return [
+				'db_id' => intval($user['id']),
+				'user_id' => intval($user['user_id']),
+				'group_id' => intval($user['group_id']),
+				'data' => json_decode($user['data'], true),
+				'settings' => json_decode($user['settings'], true)
+			];
 		}
 
 	}
