@@ -142,6 +142,7 @@
 							$next_lesson['place'] .= " (https://nav.sut.ru/?cab=k${build_info[1]}-$num)";
 						}
 					}
+					$lesson['name'] = str_replace([ '(1)', '(2)' ], '', $lesson['name']); // Говнофикс скобок в расписании при английском языке и разным подгруппам
 
 					$text .= "\n\n${lesson['num_with_time']}.\n📚 ${lesson['name']}\n🙋🏻 ${lesson['teacher']}, ${next_lesson['teacher']}\n📖 ${lesson['type']}\n🗺 Аудитория: ${lesson['place']}, ${next_lesson['place']}";
 				} else {

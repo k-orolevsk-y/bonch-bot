@@ -164,6 +164,7 @@
 					if($item['num_with_time'] == $data['items'][$key+1]['num_with_time']) {
 						$next_lesson = $data['items'][$key+1];
 
+						$item['name'] = str_replace([ '(1)', '(2)' ], '', $item['name']); // Говнофикс скобок в расписании при английском языке и разным подгруппам
 						$item['teacher'] .= ", ${next_lesson['teacher']}";
 						$item['place'] .= ", ${next_lesson['place']}";
 					}
