@@ -75,7 +75,7 @@
 			}
 		}
 
-		public function editMessage(string $message, int $conversation_message_id, int $peer_id, ?array $params = [], bool $exception_handler_need = true): mixed {
+		public function editMessage(string $message, int $conversation_message_id, int $peer_id, ?array $params = [], bool $exception_handler_need = true): int {
 			$access_token = $access_token ?? $this->access_token;
 			$params['conversation_message_id'] = $conversation_message_id;
 			$params['peer_id'] = $peer_id;
@@ -84,20 +84,21 @@
 			$params['keep_forward_messages'] = 1;
 
 			try {
-				return $this->client->messages()->edit($access_token, $params);
+				$this->client->messages()->edit($access_token, $params);
 			} catch(Exception) {
 				if($exception_handler_need) {
 					$params['forward'] = [];
+					$params['peer_ids'] = $peer_id;
 					$message = $params['message'];
 					unset($params['conversation_message_id']);
 					unset($params['message']);
 
 					$this->get("messages.delete", ['peer_id' => $peer_id, 'conversation_message_ids' => [$conversation_message_id], 'delete_for_all' => 1]);
-					return $this->sendMessage($message, $params, $access_token);
-				} else {
-					return null;
+					return (int) $this->sendMessage($message, $params, $access_token)[0]['conversation_message_id'];
 				}
 			}
+
+			return $conversation_message_id;
 		}
 
 		public function uploadFile(string $path, int $peer_id): string|bool {
