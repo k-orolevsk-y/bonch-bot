@@ -100,10 +100,6 @@
 					}
 				}
 
-				if($user['id'] != 1) {
-					continue;
-				}
-
 				$new_files_group = $lk->getNewFilesGroup();
 				if($new_files_group != null) {
 					$this->logs[] = [
