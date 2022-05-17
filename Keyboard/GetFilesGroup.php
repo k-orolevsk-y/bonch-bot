@@ -16,16 +16,6 @@
 			$vkApi = $api->getVkApi();
 			$this->api = $api;
 
-			if($object['user_id'] != 171812976) {
-				$vkApi->get("messages.sendMessageEventAnswer", [
-					'peer_id' => $object['peer_id'],
-					'user_id' => $object['user_id'],
-					'event_id' => $object['event_id'],
-					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => '🔨 Данная функция временно отключена, попробуйте воспользоваться ей позже.' ])
-				]);
-				return false;
-			}
-
 			if($payload['d'] != null) {
 				if(!in_array($object['conversation_message_id'], $payload['d'])) {
 					$payload['d'][] = $object['conversation_message_id'];
