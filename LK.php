@@ -211,7 +211,53 @@
 			return html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])) ?? "";
 		}
 
+		public function getNewMessages(): array|null {
+			$messages = $this->request("message");
+			if($messages == null) return null;
+
+			$doc = new DOMDocument();
+			$doc->loadHTML($messages);
+			$xpath = new DOMXPath($doc);
+
+			$table = $xpath->query('//*[@id="mytable"]/tbody/tr');
+			$response = [];
+
+			foreach($table as $tr) {
+				$id = str_replace('tr_', '', $tr->getAttribute('id'));
+				if(str_starts_with($id, "show_")) continue;
+				elseif($tr->getAttribute('style') != "font-weight: bold !important;") continue;
+
+				$tds = $tr->getElementsByTagName('td');
+				$files = [];
+
+				foreach($tds[2]->getElementsByTagName('a') as $file) {
+					$files[] = $file->getAttribute('href');
+				}
+
+				$response[] = [
+					'id' => (int) $id,
+					'time' => strtotime($tds[0]->textContent),
+					'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
+					'text' => html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])),
+					'files' => $files,
+					'sender' => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent)) ?? "Система"
+				];
+			}
+
+			return $response;
+		}
+
 		public function getFilesGroup(): array|null {
+			// При большом количестве файлов группы происходит слишком долгая загрузка, чтобы этого не было кешируем файлы группы...
+			$cache = R::findOne('cache', 'WHERE `name` = ? AND `user_id` = ?', [ 'files_group', $this->user_id ]);
+			if($cache != null) {
+				if($cache['time'] < (time()-90)) {
+					R::trash($cache);
+				} else {
+					return json_decode($cache['data'], true);
+				}
+			}
+
 			$response = [];
 			$page = 1;
 
@@ -249,44 +295,41 @@
 				$page += 1;
 			}
 
+			if($response != null) {
+				$cache = R::dispense('cache');
+				$cache['name'] = 'files_group';
+				$cache['user_id'] = $this->user_id;
+				$cache['time'] = time();
+				$cache['data'] = json_encode($response);
+				R::store($cache);
+			}
+
 			return $response;
 		}
 
-		public function getNewMessages(): array|null {
-			$messages = $this->request("message");
-			if($messages == null) return null;
+		public function getNewFilesGroup(): array {
+			$read = R::findOne('messages_read', 'WHERE `user_id` = ?', [ $this->user_id ]);
+			if($read == null) {
+				$read = R::getRedBean()->dispense('messages_read');
+				$read['user_id'] = $this->user_id;
+				$read['data'] = json_encode([]);
+			}
+			$read_arr = json_decode($read['data'], true);
 
-			$doc = new DOMDocument();
-			$doc->loadHTML($messages);
-			$xpath = new DOMXPath($doc);
 
-			$table = $xpath->query('//*[@id="mytable"]/tbody/tr');
-			$response = [];
-
-			foreach($table as $tr) {
-				$id = str_replace('tr_', '', $tr->getAttribute('id'));
-				if(str_starts_with($id, "show_")) continue;
-				elseif($tr->getAttribute('style') != "font-weight: bold !important;") continue;
-
-				$tds = $tr->getElementsByTagName('td');
-				$files = [];
-
-				foreach($tds[2]->getElementsByTagName('a') as $file) {
-					$files[] = $file->getAttribute('href');
+			$files_group = $this->getFilesGroup();
+			foreach($files_group as $key => $message) {
+				if(in_array($message['id'], $read_arr)) {
+					unset($files_group[$key]);
+				} else {
+					$read_arr[] = $message['id'];
 				}
-
-				$response[] = [
-					'id' => (int) $id,
-					'time' => strtotime($tds[0]->textContent),
-					'title' => trim(preg_replace('/\s\s+/', '', strip_tags((string)iconv('utf-8', 'iso8859-1', $tds[1]->textContent)))),
-					'text' => html_entity_decode(strip_tags(json_decode($this->post("sendto2", ['id' => $id, 'prosmotr' => '']), true)['annotation'])),
-					'files' => $files,
-					'sender' => str_replace(' (сотрудник/преподаватель)', '', iconv('utf-8', 'iso8859-1', $tds[3]->textContent)) ?? "Система"
-				];
 			}
 
+			$read['data'] = json_encode($read_arr);
+			R::store($read);
 
-			return $response;
+			return $files_group;
 		}
 
 		public function setMark(int $id, int $week): string|int|bool|null {

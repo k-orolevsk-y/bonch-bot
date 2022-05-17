@@ -89,6 +89,7 @@
 			$lk = new LK($object['from_id']);
 			$lk->auth();
 			$lk->getNewMessages();
+			$lk->getNewFilesGroup();
 
 			$vkApi->editMessage("☺️ Большое спасибо за доверие и регистрацию в нашем боте.\n\n⚡️ Все данные были успешно проверены и синхронизированы на нашей стороне, теперь вам доступно большинство функций бота.\n\nℹ️ Узнать их вы можете в инструкции: https://vk.com/@botbonch-about-me", $conversation_message_id, $object['peer_id'], [
 				'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Расписание 📅","payload":"{ \"command\": \"eval\", \"cmd\": \"/schedule\" }"},"color":"primary"}],[{"action":{"type":"text","label":"Заказ справок 📑","payload":"{ \"command\": \"eval\", \"cmd\": \"/order\" }"},"color":"secondary"},{"action":{"type":"text","label":"Профиль 🙇🏻","payload":"{ \"command\": \"eval\", \"cmd\": \"/profile\" }"},"color":"secondary"}],[{"action":{"type":"text","label":"Отметки 🔖","payload":"{ \"command\": \"eval\", \"cmd\": \"/marking\" }"},"color":"negative"},{"action":{"type":"text","label":"Сообщения 📪","payload":"{ \"command\": \"eval\", \"cmd\": \"/messages\" }"},"color":"positive"},{"action":{"type":"text","label":"Оценки 📚","payload":"{ \"command\": \"eval\", \"cmd\": \"/marks\" }"},"color":"negative"}]]}'
