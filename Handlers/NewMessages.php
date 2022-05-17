@@ -99,6 +99,36 @@
 						}
 					}
 				}
+
+				if($user['id'] != 1) {
+					continue;
+				}
+
+				$new_files_group = $lk->getNewFilesGroup();
+				if($new_files_group != null) {
+					$this->logs[] = [
+						'text' => date('[d.m.Y H:i:s]')." Пользователю ${user['user_id']} пришли новые сообщения в ФАЙЛЫ ГРУППЫ, отправляю уведомления об этом.",
+						'obj' => $new_files_group
+					];
+
+					if(count($new_files_group) > 1) {
+						$this->api->getVkApi()->sendMessage("🔔 Вам пришли новые сообщения в ФАЙЛЫ ГРУППЫ! (" . $this->api->pluralForm(count($new_files_group), ['штука', 'штуки', 'штук']) . ")", ['peer_id' => $user['user_id'], 'forward' => []]);
+
+						foreach($new_files_group as $message) {
+							$files = self::getFiles($message['files'], (int) $user['user_id']);
+							$this->api->getVkApi()->sendMessage("🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] ?? "Без текста"), ['peer_id' => $user['user_id'], 'forward' => [], 'attachment' => $files]);
+						}
+					} else {
+						$message = $new_files_group[0];
+						$files = self::getFiles($message['files'], (int) $user['user_id']);
+
+						if($message['sender'] == "Старостин Владимир Сергеевич") {
+							$this->api->getVkApi()->sendMessage("😈 Приспешник дьявола соизволил отправить вам телеграмму в ФАЙЛЫ ГРУППЫ!\n\n🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] ?? "Без текста"), ['peer_id' => $user['user_id'], 'forward' => [], 'attachment' => $files]);
+						} else {
+							$this->api->getVkApi()->sendMessage("🔔 Вам пришло новое сообщение в ФАЙЛЫ ГРУППЫ!\n\n🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] ?? "Без текста"), ['peer_id' => $user['user_id'], 'forward' => [], 'attachment' => $files]);
+						}
+					}
+				}
 			}
 		}
 
