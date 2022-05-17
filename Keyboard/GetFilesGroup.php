@@ -1,21 +1,30 @@
 <?php
-
 	namespace Me\Korolevsky\BonchBot\Keyboard;
 
 	use Exception;
-	use Me\Korolevsky\BonchBot\LK;
-	use RedBeanPHP\R;
-	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
+	use RedBeanPHP\R;
+	use Me\Korolevsky\BonchBot\LK;
+	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Interfaces\Keyboard;
 
-	class GetMessages implements Keyboard {
+	class GetFilesGroup implements Keyboard {
 
 		private Api $api;
 
 		public function __construct(Api $api, array $object, array $payload) {
 			$vkApi = $api->getVkApi();
 			$this->api = $api;
+
+			if($object['user_id'] != 171812976) {
+				$vkApi->get("messages.sendMessageEventAnswer", [
+					'peer_id' => $object['peer_id'],
+					'user_id' => $object['user_id'],
+					'event_id' => $object['event_id'],
+					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => '🔨 Данная функция временно отключена, попробуйте воспользоваться ей позже.' ])
+				]);
+				return false;
+			}
 
 			if($payload['d'] != null) {
 				if(!in_array($object['conversation_message_id'], $payload['d'])) {
@@ -25,8 +34,8 @@
 				$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => $payload['d'], 'delete_for_all' => 1]);
 			}
 
-			if($payload['d'] != null) {
-				$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => $payload['d'], 'delete_for_all' => 1]);
+			if($payload['u'] != null) {
+				$object['conversation_message_id'] = $payload['u'];
 			}
 
 			$text = $vkApi->useMethod("messages", "getByConversationMessageId", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']]])['items'][0]['text'];
@@ -45,73 +54,38 @@
 				return false;
 			}
 
-			$lk = new LK(intval($user['user_id']));
-			$auth = $lk->auth();
-
-			if($auth != 1) {
+			$lk = new LK($object['user_id']);
+			if(!$lk->auth()) {
 				$vkApi->get("messages.sendMessageEventAnswer", [
 					'peer_id' => $object['peer_id'],
 					'user_id' => $object['user_id'],
 					'event_id' => $object['event_id'],
-					'event_data' => json_encode(['type' => 'show_snackbar', 'text' => "🚫 Не удалось авторизоваться в ЛК."])
+					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => '⚠️ Авторизоваться в ЛК не удалось, попробуйте ещё раз.' ])
 				]);
 				return false;
 			}
+			$object['conversation_message_id'] = $vkApi->editMessage('✏️ Формируем список сообщений.', $object['conversation_message_id'], $object['peer_id']);
 
-			$cache = R::findOne('cache', 'WHERE `user_id` = ? AND `name` = ?', [$object['user_id'], "messages"]);
-			if($cache == null) {
-				$vkApi->editMessage("📛 В базе данных нет актуальных данных, запросите сообщения заново.", $object['conversation_message_id'], $object['peer_id'], [
-					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Вызвать","payload":"{ \"command\": \"eval\", \"cmd\": \"/messages update\" }"},"color":"negative"}]],"inline":true}'
-				]);
-				return false;
-			}
-			
-
-			$messages = json_decode($cache['data'], true);
-			if($messages['sorted_messages'][$payload['target']] == null) {
-				$vkApi->get("messages.sendMessageEventAnswer", [
-					'peer_id' => $object['peer_id'],
-					'user_id' => $object['user_id'],
-					'event_id' => $object['event_id'],
-					'event_data' => json_encode(['type' => 'show_snackbar', 'text' => "📛 Адресат не найден."])
-				]);
-				return false;
-			}
-			$object['conversation_message_id'] = $vkApi->editMessage("✏️ Формируем список сообщений.", $object['conversation_message_id'], $object['peer_id']);
-
-			$original_sorted_messages = $messages['sorted_messages'][$payload['target']];
-			$sorted_messages = array_slice($original_sorted_messages, 0 + $payload['o'], 5);
+			$files_group = $lk->getFilesGroup();
+			$slice_files_group = array_slice($files_group, 0+$payload['o'], 5);
 			$result = [];
 
-
-			foreach($sorted_messages as $message) {
+			foreach($slice_files_group as $message) {
 				$group_id = Data::GROUP_ID;
 
-				$message['text'] = $lk->getMessageText($message['id']);
-				if($message['receiver'] == null) {
-					if($message['sender'] == null) {
-						$message['sender'] = "Неизвестно";
-					}
-
-					$text = "🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] == null ? "Без текста" : $message['text']);
-				} else {
-					$text = "🙇🏻 Отправитель: [id${object['user_id']}|Вы]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] == null ? "Без текста" : $message['text']);
-				}
-				$files = self::getFiles($message['files'], $object['user_id']);
-
 				$result[] = [
-					'text' => $text,
-					'attachment' => $files
+					'text' => "🙇🏻 Отправитель: [club$group_id|${message['sender']}]\n⏱ Время: " . date('d.m.Y H:i:s', $message['time']) . "\n📑 Тема: [club$group_id|${message['title']}]\n✏️ Текст: " . ($message['text'] == null ? "Без текста" : $message['text']),
+					'attachment' => self::getFiles($message['files'], $object['user_id'])
 				];
 			}
 
 			$ids = [];
-			$object['conversation_message_id'] = $vkApi->editMessage("💬 " . $api->pluralForm(count($sorted_messages), ["сообщение отправлено", "сообщения отправлены", "сообщений отправлено"]) . " из ЛК. " . ($payload['o'] > 1 && count($original_sorted_messages) > 5 ? "(Отступ ${payload['o']})" : ""), $object['conversation_message_id'], $object['peer_id']);
+			$object['conversation_message_id'] = $vkApi->editMessage("💬 " . $api->pluralForm(count($slice_files_group), ["сообщение отправлено", "сообщения отправлены", "сообщений отправлено"]) . " из файлов группы. " . ($payload['o'] > 1 && count($files_group) > 5 ? "(Отступ ${payload['o']})" : ""), $object['conversation_message_id'], $object['peer_id']);
 
 			foreach($result as $message) {
 				$ids[] = $vkApi->sendMessage($message['text'], ['attachment' => $message['attachment'], 'forward' => [], 'peer_ids' => $object['peer_id']])[0]['conversation_message_id'];;
 			}
-			$vkApi->sendMessage("ℹ️ Выберите дальнейшей действие:", ['forward' => [], 'keyboard' => self::generateKeyboard($ids, $object['conversation_message_id'], [$payload['oc'] ?? 0, $payload['o'] ?? 0, $original_sorted_messages, $payload['target']])]);
+			$vkApi->sendMessage("ℹ️ Выберите дальнейшей действие:", [ 'forward' => [], 'keyboard' => self::generateKeyboard($ids, $object['conversation_message_id'], [$payload['oc'] ?? 0, $payload['o'] ?? 0, $files_group]) ]);
 
 			return true;
 		}
@@ -137,7 +111,7 @@
 					if($uploaded_doc == null) {
 						throw new Exception(code: 1);
 					}
-					$document = $this->api->getVkApi()->get("docs.save", ['file' => $uploaded_doc, 'title' => "Файл `$file_name` из ЛК"])['response']['doc'];
+					$document = $this->api->getVkApi()->get("docs.save", ['file' => $uploaded_doc, 'title' => "Файл `$file_name` из ЛК (файлы группы)"])['response']['doc'];
 					if($document == null) {
 						throw new Exception(code: 1);
 					}
@@ -176,7 +150,7 @@
 						'action' => [
 							'type' => 'callback',
 							'label' => 'Далее',
-							'payload' => json_encode(['command' => 'get_messages', 'target' => $data[3], 'oc' => $data[0], 'o' => $data[1] + 5, 'd' => $delete_ids, 'u' => $conversation_message_id])
+							'payload' => json_encode(['command' => 'get_files_group', 'oc' => $data[0], 'o' => $data[1] + 5, 'd' => $delete_ids, 'u' => $conversation_message_id])
 						],
 						'color' => 'positive'
 					];
@@ -186,7 +160,7 @@
 							'action' => [
 								'type' => 'callback',
 								'label' => 'Назад',
-								'payload' => json_encode(['command' => 'get_messages', 'target' => $data[3], 'oc' => $data[0], 'o' => $data[1] - 5, 'd' => $delete_ids, 'u' => $conversation_message_id])
+								'payload' => json_encode(['command' => 'get_files_group', 'oc' => $data[0], 'o' => $data[1] - 5, 'd' => $delete_ids, 'u' => $conversation_message_id])
 							],
 							'color' => 'negative'
 						];
@@ -196,7 +170,7 @@
 								'action' => [
 									'type' => 'callback',
 									'label' => 'Назад',
-									'payload' => json_encode(['command' => 'get_messages', 'target' => $data[3], 'oc' => $data[0], 'o' => $data[1] - 5, 'd' => $delete_ids, 'u' => $conversation_message_id])
+									'payload' => json_encode(['command' => 'get_files_group', 'oc' => $data[0], 'o' => $data[1] - 5, 'd' => $delete_ids, 'u' => $conversation_message_id])
 								],
 								'color' => 'negative'
 							],
@@ -204,7 +178,7 @@
 								'action' => [
 									'type' => 'callback',
 									'label' => 'Далее',
-									'payload' => json_encode(['command' => 'get_messages', 'target' => $data[3], 'oc' => $data[0], 'o' => $data[1] + 5, 'd' => $delete_ids, 'u' => $conversation_message_id])
+									'payload' => json_encode(['command' => 'get_files_group', 'oc' => $data[0], 'o' => $data[1] + 5, 'd' => $delete_ids, 'u' => $conversation_message_id])
 								],
 								'color' => 'positive'
 							]
@@ -225,4 +199,5 @@
 			return json_encode($keyboard);
 
 		}
+
 	}

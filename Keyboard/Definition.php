@@ -49,6 +49,8 @@
 					return new OrderConfirm($api, $object, $payload);
 				case "get_messages":
 					return new GetMessages($api, $object, $payload);
+				case "get_files_group":
+					return new GetFilesGroup($api, $object, $payload);
 				case "schedule_teacher":
 					return new ScheduleTeacher($api, $object, $payload);
 				case "schedule_img":

@@ -63,6 +63,10 @@
 			}
 
 			if($payload['delete_ids'] != null) {
+				if(!in_array($object['conversation_message_id'], $payload['delete_ids'])) {
+					$payload['delete_ids'][] = $object['conversation_message_id'];
+				}
+
 				$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => $payload['delete_ids'], 'delete_for_all' => 1]);
 			}
 
@@ -115,6 +119,9 @@
 		}
 
 		public static function generateKeyboard(array $data, int $conversation_message_id, int $offset = 0): string {
+			// Подобная инициализация для выдачи файлов группы, из-за того что они были реализованы гораздо после сообщений...
+			$data['sorted_messages'] = array_merge(['files_group' => true], $data['sorted_messages']);
+
 			$keyboard = [ 'inline' => true, 'buttons' => [] ];
 			$sorted_messages = array_slice($data['sorted_messages'], $offset, 6);
 			$generator_key = ['key' => 0, 'count' => 0];
@@ -136,14 +143,25 @@
 					$generator_key['count'] = 0;
 				}
 
-				$keyboard['buttons'][$generator_key['key']][] = [
-					'action' => [
-						'type' => 'callback',
-						'label' => $name,
-						'payload' => json_encode(['command' => 'get_messages', 'target' => $target, 'oc' => $offset])
-					],
-					'color' => 'primary'
-				];
+				if($target == 'files_group') {
+					$keyboard['buttons'][$generator_key['key']][] = [
+						'action' => [
+							'type' => 'callback',
+							'label' => 'Файлы группы',
+							'payload' => json_encode(['command' => 'get_files_group'])
+						],
+						'color' => 'secondary'
+					];
+				} else {
+					$keyboard['buttons'][$generator_key['key']][] = [
+						'action' => [
+							'type' => 'callback',
+							'label' => $name,
+							'payload' => json_encode(['command' => 'get_messages', 'target' => $target, 'oc' => $offset])
+						],
+						'color' => 'primary'
+					];
+				}
 				$generator_key['count'] += 1;
 			}
 
