@@ -3,6 +3,7 @@
 
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Interfaces\Keyboard;
+	use Me\Korolevsky\BonchBot\LK;
 	use RedBeanPHP\R;
 
 	class SetSettings implements Keyboard {
@@ -29,6 +30,23 @@
 					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "📛 Ваш профиль не найден в базе данных." ])
 				]);
 				return false;
+			}
+
+			if($payload['key'] == 'new_messages' && $payload['value']) {
+				$lk = new LK($object['user_id']);
+				if(!$lk->auth()) {
+					$vkApi->get("messages.sendMessageEventAnswer", [
+						'peer_id' => $object['peer_id'],
+						'user_id' => $object['user_id'],
+						'event_id' => $object['event_id'],
+						'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "⚠️ Не удалось авторизоваться в ЛК и синхронизировать данные, для установки данной настройки." ])
+					]);
+					return false;
+				}
+
+				$lk->getNewMessages();
+				$lk->getNewFilesGroup();
+				// Объяснение данному коду есть в Bind.php...
 			}
 
 			$settings = json_decode($user['settings'], true);
