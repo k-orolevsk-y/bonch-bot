@@ -329,7 +329,7 @@
 			$read['data'] = json_encode($read_arr);
 			R::store($read);
 
-			return $files_group;
+			return array_values($files_group);
 		}
 
 		public function setMark(int $id, int $week): string|int|bool|null {
