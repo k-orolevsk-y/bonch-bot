@@ -1,25 +1,15 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Keyboard;
 
+	use RedBeanPHP\R;
+	use Me\Korolevsky\BonchBot\LK;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Interfaces\Keyboard;
-	use Me\Korolevsky\BonchBot\LK;
-	use RedBeanPHP\R;
 
 	class GroupMembers implements Keyboard {
 
 		public function __construct(Api $api, array $object, array $payload) {
 			$vkApi = $api->getVkApi();
-
-			if($object['user_id'] != 171812976) {
-				$vkApi->get("messages.sendMessageEventAnswer", [
-					'peer_id' => $object['peer_id'],
-					'user_id' => $object['user_id'],
-					'event_id' => $object['event_id'],
-					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "🔨 Данная функция временно недоступна :(" ])
-				]);
-				return false;
-			}
 
 			$user = R::findOne('users', 'WHERE `user_id` = ?', [$object['user_id']]);
 			if($user == null) {

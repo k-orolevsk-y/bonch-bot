@@ -19,7 +19,7 @@
 		}
 
 		public function auth(): int {
-			$user = R::findOne('users', 'WHERE `user_id` = ?', [$this->user_id]);
+			$user = R::findOne('users', 'WHERE `user_id` = ?', [ $this->user_id ]);
 			if($user == null) {
 				return -1;
 			}
@@ -28,11 +28,11 @@
 			if($request === BONCHBOT_LK_ERROR_TIMEOUT) {
 				return -2; // ЛК в канаве
 			} elseif($request === false) {
-				$webLK = new WebLK($this->user_id);
-				$cookie = $webLK->getCookie();
-
-				if($cookie == null) {
-					return 0;
+				if(($cookie = $this->getCookie()) == null) { // Пробуем авторизовать пользователя через запросы, если не получилось - через вебдрайвер
+					$webLK = new WebLK($this->user_id);
+					if(($cookie = $webLK->getCookie()) == null) { // Если не удалось и через вебдрайвер, то что уж поделать, лк пидорас.
+						return 0;
+					}
 				}
 
 				$user['cookie'] = bin2hex(openssl_encrypt($cookie, 'AES-128-CBC', Data::ENCRYPT_KEY));
@@ -41,6 +41,64 @@
 
 			$this->cookie = openssl_decrypt(hex2bin($user['cookie']), 'AES-128-CBC', Data::ENCRYPT_KEY);
 			return 1;
+		}
+
+		public function getCookie(): ?string {
+			if(empty($this->user_id)) {
+				return null;
+			}
+
+			$user = R::findOne('users', 'WHERE `user_id` = ?', [ $this->user_id ]);
+			$login = openssl_decrypt(hex2bin($user['login']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+			$password = openssl_decrypt(hex2bin($user['password']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+
+			$ch = curl_init();
+			curl_setopt_array($ch, [ // Получаем от ЛК сформированные куки на главной странице, для создания их авторизованными...
+				CURLOPT_URL => 'https://lk.sut.ru/cabinet/',
+				CURLOPT_HEADER => true,
+				CURLOPT_RETURNTRANSFER => true,
+			]);
+			$result = curl_exec($ch);
+			curl_close($ch);
+
+			preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches);
+			$cookies = [];
+			foreach($matches[1] as $item) {
+				parse_str($item, $cookie);
+				$cookies = array_merge($cookies, $cookie);
+			}
+			$cookie = "miden=${cookies['miden']};uid=${cookies['uid']}"; // Формируем список из miden&uid, отсеивая ненужные нам куки разных защит
+
+			$ch = curl_init();
+			curl_setopt_array($ch, [
+				CURLOPT_URL => 'https://lk.sut.ru/cabinet/lib/autentificationok.php',
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_CUSTOMREQUEST => 'POST',
+				CURLOPT_POSTFIELDS => http_build_query([ 'users' => $login, 'parole' => $password ]),
+				CURLOPT_HTTPHEADER => [
+					"Cookie: $cookie",
+				],
+			]);
+			$result = curl_exec($ch); // Данным запросом мы авторизуем куки на стороне ЛК
+			curl_close($ch);
+
+			if(!intval($result)) { // Если 0 - значит ЛК не авторизовался
+				return null;
+			}
+
+			$ch = curl_init();
+			curl_setopt_array($ch, [
+				CURLOPT_URL => 'https://lk.sut.ru/cabinet/?login=yes',
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_CUSTOMREQUEST => 'GET',
+				CURLOPT_HTTPHEADER => [
+					"Cookie: $cookie",
+				],
+			]);
+			curl_exec($ch); // Данный запрос требуется зачем-то ЛК, без него часть методов будут отдавать ошибку при запросах...
+			curl_close($ch);
+
+			return $cookie;
 		}
 
 		public function request(string $method, array $params = [], string $cookie = null): string|null|int|false {
@@ -540,7 +598,7 @@
 			return $result;
 		}
 
-		#[ArrayShape(['title' => "string", 'members' => "array", 'pdf_file' => "false|string"])]
+		#[ArrayShape(['title' => "string", 'members' => "array"])]
 		public function getGroupMembers(): array {
 			$schedule = $this->request("raspisanie");
 
