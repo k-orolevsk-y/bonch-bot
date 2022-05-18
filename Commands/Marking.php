@@ -48,7 +48,7 @@
 				$conversation_message_id = $payload['update'];
 			}
 
-			if(in_array(mb_strtolower($msg[1]), ['завтра', 'tomorrow']) || date('H') > 20) {
+			if(in_array(mb_strtolower($msg[1]), ['завтра', 'tomorrow']) || date('H') >= 20) {
 				$date = date('d.m.Y', strtotime("+1 day"));
 			} else {
 				$date = date('d.m.Y');
