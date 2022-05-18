@@ -57,6 +57,8 @@
 					return new ScheduleImg($api, $object, $payload);
 				case "bugfix":
 					return new BugFix($api, $object, $payload);
+				case "group_members":
+					return new GroupMembers($api, $object, $payload);
 			}
 		}
 

@@ -5,6 +5,7 @@
 	use Exception;
 	use DOMDocument;
 	use RedBeanPHP\R;
+	use Smalot\PdfParser\Parser;
 	use JetBrains\PhpStorm\ArrayShape;
 
 	class LK {
@@ -140,6 +141,38 @@
 			}
 
 			return $result;
+		}
+
+		public function downloadFile(string $url, string $ext = null): string|false {
+			$file = __DIR__.'/Files/'.uniqid();
+			if($ext == null) {
+				$file .= '.' . pathinfo(explode('?', $url)[0], PATHINFO_EXTENSION);
+			} else {
+				$file .= ".$ext";
+			}
+			$fp = fopen($file, 'w+');
+
+			$ch = curl_init();
+			curl_setopt_array($ch, [
+				CURLOPT_URL => $url,
+				CURLOPT_ENCODING => '',
+				CURLOPT_MAXREDIRS => 10,
+				CURLOPT_TIMEOUT_MS => 1500,
+				CURLOPT_HTTPHEADER => [
+					"Cookie: $this->cookie",
+				],
+				CURLOPT_CUSTOMREQUEST => 'GET',
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_FOLLOWLOCATION => true,
+				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			]);
+			$result = curl_exec($ch);
+			curl_close($ch);
+
+			fputs($fp, $result);
+			fclose($fp);
+
+			return $result ? $file : false;
 		}
 
 		#[ArrayShape(['count' => "int", 'messages' => "array", 'sorted_messages' => "array"])]
@@ -503,6 +536,36 @@
 					$result['well'] += preg_match_all('%5%', $mark);
 				}
 			}
+
+			return $result;
+		}
+
+		#[ArrayShape(['title' => "string", 'members' => "array", 'pdf_file' => "false|string"])]
+		public function getGroupMembers(): array {
+			$schedule = $this->request("raspisanie");
+
+			$doc = new DOMDocument();
+			$doc->loadHTML($schedule);
+			$xpath = new DOMXPath($doc);
+
+			$link = $xpath->query('//a[@class="style_gr"]')->item(0)->attributes->getNamedItem('href')->textContent;
+			$file = $this->downloadFile($link, 'pdf');
+
+			$parser = new Parser();
+			$pdf = $parser->parseFile($file);
+			$text = explode("\n", $pdf->getText());
+
+			$result = [
+				'title' => $text[0],
+				'members' => []
+			];
+			foreach($text as $str) {
+				$arr = explode(' ', $str);
+				if(!is_numeric($arr[0])) continue;
+
+				$result['members'][] = implode(' ', array_slice($arr, 1));
+			}
+			unlink($file);
 
 			return $result;
 		}

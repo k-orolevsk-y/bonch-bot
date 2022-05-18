@@ -25,7 +25,7 @@
 				$text .= "🛂 ФИО: ${data['name']}\n🎂 Дата рождения: ${data['birthday']}\n📘 Группа: ${data['group']}";
 			}
 
-			$keyboard = $lk != null ? '{"buttons":[[{"action":{"type":"callback","label":"Настройки","payload":"{ \"command\": \"settings\", \"for\": '.$object['from_id'].' }"},"color":"negative"}]],"inline":true}' : '';
+			$keyboard = $lk != null ? '{"buttons":[[{"action":{"type":"callback","label":"Настройки","payload":"{ \"command\": \"settings\", \"for\": '.$object['from_id'].' }"},"color":"negative"}], [{"action":{"type":"callback","label":"Список группы","payload":"{ \"command\": \"group_members\", \"for\": '.$object['from_id'].' }"},"color":"secondary"}]],"inline":true}' : '';
 			if($payload['update'] != null) {
 				$vkApi->editMessage($text, $payload['update'], $object['peer_id'], [
 					'keyboard' => $keyboard
