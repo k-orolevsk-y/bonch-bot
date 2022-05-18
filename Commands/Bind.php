@@ -50,7 +50,7 @@
 			}
 
 			$forward = [ 'is_reply' => true, 'peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']]];
-			$conversation_message_id = $vkApi->sendMessage("📡 Попытка авторизации...", [
+			$conversation_message_id = $vkApi->sendMessage("🔐 Пробуем авторизовать аккаунт.", [
 					'peer_ids' => $object['peer_id'],
 					'forward' => $forward
 				]
@@ -61,15 +61,27 @@
 			$attempt = $webLK->getInfo();
 
 			if(!$attempt) {
-				$vkApi->editMessage("❌ Авторизоваться в ЛК не удалось, скорее всего данные неверны.", $conversation_message_id, $object['peer_id']);
+				$vkApi->editMessage("🚫 Авторизоваться в ЛК не удалось, проверьте данные и попробуйте авторизоваться с ними на сайте.", $conversation_message_id, $object['peer_id'], [
+					'keyboard' => '{"buttons":[[{"action":{"type":"open_link","link":"https://lk.sut.ru/","label":"Сайт ЛК","payload":""}}]],"inline":true}'
+				]);
 				return false;
 			}
 
 			$group_id = R::findOne('groups', 'WHERE `name` LIKE ?', [ "%${attempt['group']}%" ])['id'];
 			if($group_id == null) {
-				$vkApi->editMessage("❌ Не удалось определить Вашу группу, попробуйте чуть позже.", $conversation_message_id, $object['peer_id']);
+				$vkApi->editMessage("🚫 Не удалось определить Вашу группу, попробуйте чуть позже.", $conversation_message_id, $object['peer_id']);
 				return false;
 			}
+
+			$users = R::getAll('SELECT * FROM `users` WHERE `group_id` = ?', [ $group_id ]);
+			foreach($users as $user) {
+				$user_login = openssl_decrypt(hex2bin($user['login']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+				if($login == $user_login) {
+					$vkApi->editMessage("🚫 Данный аккаунт ЛК уже привязан к другому пользователю!", $conversation_message_id, $object['peer_id']);
+					return false;
+				}
+			}
+			$vkApi->editMessage("🔨 Данные успешно проверены, синхронизируем их.", $conversation_message_id, $object['peer_id']);
 
 			$cookie = $attempt['cookie'];
 			unset($attempt['cookie']);
@@ -82,7 +94,7 @@
 			$db['login'] = bin2hex(openssl_encrypt($login, 'AES-128-CBC', Data::ENCRYPT_KEY));
 			$db['password'] = bin2hex(openssl_encrypt($password, 'AES-128-CBC', Data::ENCRYPT_KEY));
 			$db['data'] = json_encode($attempt);
-			$db['settings'] = json_encode(['type_marking' => 0, 'send_notifications' => 1, 'mailing' => 1, 'new_messages' => 1, 'schedule_from_lk' => 1]);
+			$db['settings'] = json_encode(['type_marking' => 0, 'send_notifications' => 1, 'mailing' => 1, 'new_messages' => 1, 'schedule_from_lk' => 1, 'marks_notify' => 1]);
 			R::store($db);
 
 			// Прочитаем все новые сообщения из ЛК, чтобы бот не проспамил об этом после привязки.

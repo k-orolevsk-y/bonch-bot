@@ -33,8 +33,12 @@
 
 			$schedule = R::getAll('SELECT * FROM `schedule` WHERE `user_id` = ?', [ $object['from_id'] ]);
 			$cache = R::getAll('SELECT * FROM `cache` WHERE `user_id` = ?', [ $object['from_id'] ]);
+			$marks = R::getAll('SELECT * FROM `marks` WHERE `user_id` = ?', [ $object['from_id'] ]);
+			$messages_read = R::getAll('SELECT * FROM `messages_read` WHERE `user_id` = ?', [ $object['from_id'] ]);
 			R::trashAll(R::convertToBeans('schedule', $schedule));
 			R::trashAll(R::convertToBeans('cache', $cache));
+			R::trashAll(R::convertToBeans('marks', $marks));
+			R::trashAll(R::convertToBeans('messages_read', $messages_read));
 			R::trash($db);
 
 			$vkApi->sendMessage("✅ Данные были безвозвратно удалены.", [
