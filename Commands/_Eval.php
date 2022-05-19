@@ -147,4 +147,27 @@
 			];
 		}
 
+		public function clearCookie(int $user_id = null): bool {
+			if($user_id == null) {
+				$users = R::getAll('SELECT * FROM `users`');
+				foreach($users as $user) {
+					$user = R::findOne('users', 'WHERE `id` = ?', [ $user['id'] ]);
+					$user['cookie'] = null;
+					R::store($user);
+				}
+
+			} else {
+				$user = R::findOne('users', 'WHERE `user_id` = ?', [ $user_id ]);
+				if($user == null) {
+					return false;
+				}
+
+				$user['cookie'] = null;
+				R::store($user);
+
+			}
+
+			return true;
+		}
+
 	}
