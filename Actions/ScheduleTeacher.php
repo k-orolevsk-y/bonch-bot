@@ -1,11 +1,10 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Actions;
 
-
+	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use Me\Korolevsky\BonchBot\Interfaces\Action;
-	use RedBeanPHP\R;
 
 	class ScheduleTeacher implements Action {
 

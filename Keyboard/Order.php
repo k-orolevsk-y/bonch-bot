@@ -20,12 +20,13 @@
 				]);
 				return false;
 			}
-
 			$types = OrderCmd::getWhys();
-			$vkApi->editMessage("📑 Заказ справок.\n❔ Место предоставления: ${types[$payload['why']]}\n\n✏️ Ответьте на данное сообщение указав цель получения справки.", $object['conversation_message_id'], $object['peer_id'], [
+
+			$object['conversation_message_id'] = $vkApi->editMessage("📑 Заказ справок.\n❔ Место предоставления: ${types[$payload['why']]}\n\n✏️ Ответьте на данное сообщение указав цель получения справки.", $object['conversation_message_id'], $object['peer_id'], [
 				'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Отмена","payload":"{ \"command\": \"cancel\" }"},"color":"negative"}]],"inline":true}',
 				'payload' => json_encode(['action' => 'order', 'why' => $payload['why']])
 			]);
+			$api->createAction(['action' => 'order', 'why' => $payload['why'], 'reply_message_id' => $object['conversation_message_id']]);
 			return true;
 		}
 

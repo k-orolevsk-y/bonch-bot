@@ -69,10 +69,18 @@
 			}
 
 			$payload_reply_message = json_decode(((array)$obj['reply_message'])['payload'], true);
-			if($payload_reply_message['action'] != null) {
-				$payload_reply_message['reply_message_id'] = $obj['reply_message']->conversation_message_id;
+			$payload_action = $api->getAction();
+
+			if($payload_reply_message['action'] != null || $payload_action) {
+				if($payload_reply_message == null) {
+					$payload_reply_message = $payload_action;
+				} else {
+					$payload_reply_message['reply_message_id'] = $obj['reply_message']->conversation_message_id;
+				}
+
 				new DefinitionActions($api, $obj, $payload_reply_message);
 
+				$api->removeAction();
 				$api->end();
 			}
 

@@ -87,7 +87,7 @@
 				$this->client->messages()->edit($access_token, $params);
 			} catch(Exception) {
 				if($exception_handler_need) {
-					$params['forward'] = [];
+					$params['forward'] = $this->getForwardByCMId($peer_id, $conversation_message_id);
 					$params['peer_ids'] = $peer_id;
 					$message = $params['message'];
 					unset($params['conversation_message_id']);
@@ -99,6 +99,15 @@
 			}
 
 			return $conversation_message_id;
+		}
+
+		public function getForwardByCMId($peer_id, $conversation_message_id): array {
+			$message = $this->get("messages.getByConversationMessageId", [ 'peer_id' => $peer_id, 'conversation_message_ids' => [$conversation_message_id] ])['response']['items'][0];
+			if(isset($message['reply_message'])) {
+				return ['peer_id' => $peer_id,'conversation_message_ids' => [$message['reply_message']['conversation_message_id']],'is_reply' => true];
+			} else {
+				return [];
+			}
 		}
 
 		public function uploadFile(string $path, int $peer_id): string|bool {

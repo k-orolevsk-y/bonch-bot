@@ -25,7 +25,7 @@
 				$forward = [];
 				$object['peer_id'] = $object['from_id'];
 			} else {
-				$forward = $msg[1] == "update" ? [] : ['is_reply' => true, 'peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']]];
+				$forward = $msg[1] == "update" ? $vkApi->getForwardByCMId($object['peer_id'], $object['conversation_message_id']) : ['is_reply' => true, 'peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']]];
 			}
 
 			$user = R::findOne('users', 'WHERE `user_id` = ?', [ $object['from_id'] ]);
@@ -45,7 +45,12 @@
 					]
 				)[0]['conversation_message_id'];
 			} else {
-				$conversation_message_id = $payload['update'];
+				if($object['conversation_message_id'] > $payload['update']) {
+					$conversation_message_id = $object['conversation_message_id'];
+				} else {
+					$conversation_message_id = $payload['update'];
+				}
+
 				if($msg[1] == "update") {
 					$deleted = $vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']], 'delete_for_all' => 1]);
 					if(!$deleted['response'][$object['conversation_message_id']]) {
@@ -58,7 +63,7 @@
 						]
 					)[0]['conversation_message_id'];
 				} elseif(!is_numeric($msg[1])) {
-					$vkApi->editMessage("🙈 Авторизируемся в ЛК.", $conversation_message_id, $object['peer_id']);
+					$object['conversation_message_id'] = $vkApi->editMessage("🙈 Авторизируемся в ЛК.", $conversation_message_id, $object['peer_id']);
 				}
 			}
 
@@ -83,7 +88,7 @@
 				if($cache != null) {
 					R::trash($cache);
 				}
-				$vkApi->editMessage("📘 Получаем сообщения из ЛК...\nℹ️ Это довольно затратная функция, получение сообщений происходит в течении 15 секунд.", $conversation_message_id, $object['peer_id']);
+				$conversation_message_id = $vkApi->editMessage("📘 Получаем сообщения из ЛК...\nℹ️ Это довольно затратная функция, получение сообщений происходит в течении 15 секунд.", $conversation_message_id, $object['peer_id']);
 
 				$data = $lk->getMessages();
 				if($data == null) {

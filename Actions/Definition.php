@@ -13,5 +13,4 @@
 					return new ScheduleTeacher($api, $object, $payload);
 			}
 		}
-
 	}

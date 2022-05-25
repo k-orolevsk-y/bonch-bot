@@ -12,9 +12,12 @@
 			$vkApi = $api->getVkApi();
 
 			if($payload['action'] == 0) {
-				return $vkApi->editMessage("🔍 Ответьте на данное сообщение, указав имя преподователя.", $object['conversation_message_id'], $object['peer_id'], [
+				$object['conversation_message_id'] = $vkApi->editMessage("🔍 Ответьте на данное сообщение, указав имя преподователя.", $object['conversation_message_id'], $object['peer_id'], [
 					'payload' => json_encode(['action' => 'schedule_teacher'])
 				]);
+				$api->createAction(['action' => 'schedule_teacher', 'reply_message_id' => $object['conversation_message_id']]);
+
+				return true;
 			} elseif($payload['action'] == 1) {
 				$db = R::findOne('schedule_parse', 'WHERE `teacher` LIKE ?', [ "%${payload['teacher']}%" ]);
 				if($db == null) {

@@ -25,8 +25,8 @@
 				$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => $payload['d'], 'delete_for_all' => 1]);
 			}
 
-			if($payload['d'] != null) {
-				$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => $payload['d'], 'delete_for_all' => 1]);
+			if($payload['u'] != null) {
+				$object['conversation_message_id'] = $payload['u'];
 			}
 
 			$text = $vkApi->useMethod("messages", "getByConversationMessageId", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']]])['items'][0]['text'];

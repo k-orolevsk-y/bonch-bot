@@ -57,18 +57,47 @@
 			return $num.' '.$after[ ($number%100>4 && $number%100<20)? 2: $cases[min($number%10, 5)] ];
 		}
 
-		public function sendBonchRequest(string $method, array $params): ?array {
-			$ch = curl_init();
-			curl_setopt_array($ch, [
-				CURLOPT_URL => "https://bonch.ssapi.ru/$method",
-				CURLOPT_POST => true,
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_POSTFIELDS => http_build_query($params)
-			]);
-			$result = curl_exec($ch);
-			curl_close($ch);
+		public function createAction(array $payload): bool {
+			try {
+				$action = R::dispense('actions');
+				$action['user_id'] = $this->object['from_id'] ?? $this->object['user_id'];
+				$action['peer_id'] = $this->object['peer_id'];
+				$action['payload'] = json_encode($payload);
+				R::store($action);
+			} catch(\Exception) {
+				return false;
+			}
 
-			return json_decode($result, true);
+			return true;
+		}
+
+		public function removeAction(int $action_id = 0): bool {
+			if($action_id == 0) {
+				$actions = R::getAll('SELECT * FROM `actions` WHERE `user_id` = ?', [ $this->object['from_id'] ?? $this->object['user_id'] ]);
+				if($actions == null) {
+					return false;
+				}
+
+				R::trashAll(R::convertToBeans('actions', $actions));
+			} else {
+				$action = R::findOne('actions', 'WHERE `id` = ?', [ $action_id ]);
+				if($action == null) {
+					return false;
+				}
+
+				R::trash($action);
+			}
+
+			return true;
+		}
+
+		public function getAction(): ?array {
+			$action = R::findOne('actions', 'WHERE `user_id` = ? AND `peer_id` = ?', [ $this->object['from_id'] ?? $this->object['user_id'], $this->object['peer_id'] ]);
+			if($action == null) {
+				return null;
+			}
+
+			return json_decode($action['payload'], true);
 		}
 
 		public function getVkApi(string|null $version = null): VKApi {
@@ -124,6 +153,7 @@
 			}
 
 			if(!empty($object['peer_id'])) {
+				$this->removeAction();
 				$this->vkApi->sendMessage(
 					"⚠️ При обработке команды произошла техническая ошибка, информация о ней:\n\nВремя: ".date('d.m.Y H:i:s') ."\nФайл: ".end($file)."\nID чата: ${object['peer_id']}\nID сообщения/эвента: ".($object['event_id'] ?? $object['conversation_message_id']) . "\nПолезная нагрузка: " . (isset($object['payload']) ? json_encode($object['payload']) : "NULL") . "\n\nФайл-лог ошибки, предоставлен вместе с сообщением.",
 					[

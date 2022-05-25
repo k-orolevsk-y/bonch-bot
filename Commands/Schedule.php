@@ -78,7 +78,7 @@
 			}
 
 			if(!empty($settings) && !empty($user) && $settings['schedule_from_lk']) {
-				$vkApi->editMessage("🙈 Авторизируемся в ЛК.", $conversation_message_id, $object['peer_id']);
+				$conversation_message_id = $vkApi->editMessage("🙈 Авторизируемся в ЛК.", $conversation_message_id, $object['peer_id']);
 
 				$lk = new LK($user['user_id']);
 				$auth = $lk->auth();

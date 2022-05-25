@@ -19,10 +19,11 @@
 
 			$types = OrderCmd::getWhys();
 			if(iconv_strlen($object['text']) > 150) {
-				$vkApi->editMessage("⚠️ Цель получения не может быть больше 150 символов.\n\n📑 Заказ справок.\n❔ Место предоставления: ${types[$payload['why']]}\n\n✏️ Ответьте на данное сообщение указав цель получения справки.", $object['conversation_message_id'], $object['peer_id'], [
+				$object['conversation_message_id'] = $vkApi->editMessage("⚠️ Цель получения не может быть больше 150 символов.\n\n📑 Заказ справок.\n❔ Место предоставления: ${types[$payload['why']]}\n\n✏️ Ответьте на данное сообщение указав цель получения справки.", $object['conversation_message_id'], $object['peer_id'], [
 					'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Отмена","payload":"{ \"command\": \"cancel\" }"},"color":"negative"}]],"inline":true}',
 					'payload' => json_encode(['action' => 'order', 'why' => $payload['why']])
 				]);
+				$api->createAction(['action' => 'order', 'why' => $payload['why'], 'reply_message_id' => $object['conversation_message_id']]);
 				return false;
 			}
 
