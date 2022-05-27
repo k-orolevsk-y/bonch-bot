@@ -34,7 +34,7 @@
 
 			if($payload['key'] == 'new_messages' && $payload['value']) {
 				$lk = new LK($object['user_id']);
-				if(!$lk->auth()) {
+				if($lk->auth() != 1) {
 					$vkApi->get("messages.sendMessageEventAnswer", [
 						'peer_id' => $object['peer_id'],
 						'user_id' => $object['user_id'],
