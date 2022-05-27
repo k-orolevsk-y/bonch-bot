@@ -87,6 +87,12 @@
 				$vkApi->editMessage("🎓 Ваши оценки:", $conversation_message_id, $object['peer_id'], [ 'attachment' => "doc${document['owner_id']}_${document['id']}", 'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marks\", \"update\": '.$conversation_message_id.' }"},"color":"secondary"}]],"inline":true}' ]);
 				return true; // Не авторизовался или нет оценок - дополнительной инфы не будет
 			}
+
+			if(($marksLK['well']+$marksLK['good']) < 1 || ($marksLK['not_bad']+$marksLK['bad']) < 1) { // Если одна из сумм чисел 0, то в процентном считать не будем
+				$vkApi->editMessage("🎓 Информация по оценкам на данный семестр:\n\n🚔 Количество пропусков: ${marksLK['pass']}\n☀️ Количество оценок (5/4/3/2): ${marksLK['well']}/${marksLK['good']}/${marksLK['not_bad']}/${marksLK['bad']}\n\n📷 Скриншот ваших оценок:", $conversation_message_id, $object['peer_id'], [ 'attachment' => "doc${document['owner_id']}_${document['id']}", 'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marks\", \"update\": '.$conversation_message_id.' }"},"color":"secondary"}]],"inline":true}' ]);
+				return true;
+			}
+
 			$percent = [
 				round(($marksLK['well']+$marksLK['good'])/($marksLK['well']+$marksLK['good']+$marksLK['not_bad']+$marksLK['bad'])*100, 1),
 				round(($marksLK['not_bad']+$marksLK['bad'])/($marksLK['well']+$marksLK['good']+$marksLK['not_bad']+$marksLK['bad'])*100, 1)

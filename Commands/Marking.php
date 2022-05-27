@@ -104,10 +104,15 @@
 						$item['name'] = mb_strcut($item['name'], 0, 69) . "...";
 					}
 
+					$description = "${item['teacher']}\n${item['place']}";
+					if(iconv_strlen($description) < 6) {
+						$description = "Дополнительная информация отсутствует.";
+					}
+
 					if($time < time()) {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",
-							'description' => "${item['teacher']}\n${item['place']}",
+							'description' => $description,
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -120,7 +125,7 @@
 					} elseif($schedule == null) {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",
-							'description' => "${item['teacher']}\n${item['place']}",
+							'description' => $description,
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -133,7 +138,7 @@
 					} elseif($schedule['status'] == -1) {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",
-							'description' => "${item['teacher']}\n${item['place']}",
+							'description' => $description,
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
@@ -146,7 +151,7 @@
 					} else {
 						$carousel['elements'][] = [
 							'title' => "${item['num_with_time']}\n${item['name']}",
-							'description' => "${item['teacher']}\n${item['place']}",
+							'description' => $description,
 							'buttons' => [[
 								'action' => [
 									'type' => 'callback',
