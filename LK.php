@@ -407,8 +407,39 @@
 			}
 			$read_arr = json_decode($read['data'], true);
 
+			$files = $this->request("files_group_pr", [ 'page' => 1 ]);
+			if(str_contains($files, "Файлов пока нет.")) {
+				return [];
+			}
 
-			$files_group = $this->getFilesGroup();
+			$doc = new DOMDocument();
+			$doc->loadHTML($files);
+			$xpath = new DOMXPath($doc);
+
+			$table = $xpath->query('//table[@id="mytable"]/tbody/tr');
+			$files_group = [];
+
+			foreach($table as $tr) {
+				$id = str_replace('tr_', '', $tr->getAttribute('id'));
+				if(str_starts_with($id, "show")) continue;
+
+				$tds = $tr->getElementsByTagName('td');
+				$files = [];
+
+				foreach($tds[5]->getElementsByTagName('a') as $file) {
+					$files[] = $file->getAttribute('href');
+				}
+
+				$files_group[] = [
+					'id' => intval($id),
+					'sender' => iconv('utf-8', 'iso8859-1', $tds[1]->textContent),
+					'time' => strtotime($tds[2]->textContent),
+					'title' => iconv('utf-8', 'iso8859-1', $tds[3]->textContent),
+					'text' => iconv('utf-8', 'iso8859-1', $tds[4]->textContent),
+					'files' => $files
+				];
+			}
+
 			foreach($files_group as $key => $message) {
 				if(in_array($message['id'], $read_arr)) {
 					unset($files_group[$key]);
