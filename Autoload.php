@@ -26,6 +26,8 @@
 					require __DIR__."/Actions/${class_name}.php";
 				} elseif(file_exists(__DIR__."/Interfaces/${class_name}.php") && $namespace == "Interfaces") { /** Maybe it's interface file? */
 					require __DIR__."/Interfaces/${class_name}.php";
+				} elseif(file_exists(__DIR__."/Tasks/${class_name}.php") && $namespace == "Tasks") { /** Maybe it's tasks file? */
+					require __DIR__."/Tasks/${class_name}.php";
 				}
 			});
 		}

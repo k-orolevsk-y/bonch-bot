@@ -10,6 +10,7 @@
         "ext-iconv": "*",
         "ext-curl": "*",
         "ext-openssl": "*",
+        "ext-memcached": "*",
         "smalot/pdfparser": "^2.1"
     },
     "license": "MIT",
