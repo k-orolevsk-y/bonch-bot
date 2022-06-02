@@ -12,7 +12,7 @@
 			$vkApi = $api->getVkApi();
 			$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => [$payload['reply_message_id']], 'delete_for_all' => 1]);
 
-			if($api->cM($object['text'], [ 'гандон', 'уебок', 'чмо', 'пидорас', 'gun done' ])) {
+			if($api->cM($object['text'], [ 'гандон', 'уебок', 'чмо', 'пидорас', 'gun done', 'датсун', 'обоссышь', 'уебан', 'коровье говно' ])) {
 				$object['text'] = 'старостин'; // рофл над старостиным
 			}
 

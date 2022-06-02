@@ -464,7 +464,7 @@
 
 		public function getSchedule(string $date = "now 00:00:00"): array|false {
 			try {
-				if(date('m') < 6) {
+				if(date('m') < 9) {
 					$time_from = strtotime('01.09.'.(date('Y')-1));
 				} else {
 					$time_from = strtotime(date('01.09.Y'));
