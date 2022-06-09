@@ -59,6 +59,8 @@
 					return new BugFix($api, $object, $payload);
 				case "group_members":
 					return new GroupMembers($api, $object, $payload);
+				case "screen_marks":
+					return new ScreenMarks($api, $object, $payload);
 			}
 		}
 

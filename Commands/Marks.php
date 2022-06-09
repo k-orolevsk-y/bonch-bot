@@ -1,11 +1,9 @@
 <?php
 	namespace Me\Korolevsky\BonchBot\Commands;
 
-	use Exception;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\LK;
 	use Me\Korolevsky\BonchBot\Api;
-	use Me\Korolevsky\BonchBot\WebLK;
 	use Me\Korolevsky\BonchBot\Interfaces\Command;
 
 	class Marks implements Command {
@@ -50,55 +48,25 @@
 				$vkApi->editMessage("📘 Получаю данные из ЛК...", $conversation_message_id, $object['peer_id']);
 			}
 
-			$webLK = new WebLK(intval($object['from_id']));
-			$marks = $webLK->getScreenMarks();
-
-			if($marks == null) {
-				$vkApi->editMessage("❌ Не удалось создать скриншот оценок.", $conversation_message_id, $object['peer_id']);
-				return false;
-			}
-
-			try {
-				$address = $vkApi->get("docs.getMessagesUploadServer", ['peer_id' => $object['peer_id'], 'type' => 'doc'])['response']['upload_url'];
-				if($address == null) {
-					throw new Exception(code: 0);
-				}
-				$uploaded_doc = $vkApi->getClient()->getRequest()->upload($address, 'file', $marks)['file'];
-				if($uploaded_doc == null) {
-					throw new Exception(code: 1);
-				}
-				$document = $vkApi->get("docs.save", ['file' => $uploaded_doc, 'title' => "Оценки пользователя ${object['from_id']} от " . date('d.m.Y H:i')])['response']['doc'];
-				if($document == null) {
-					throw new Exception(code: 1);
-				}
-			} catch(Exception $e) {
-				unlink($marks);
-				if($e->getCode() == 0) {
-					$vkApi->editMessage("📛 Невозможно загрузить скриншот, скорее всего у бота закрыт доступ к отправки для вас сообщений.", $conversation_message_id, $object['peer_id']);
-				} else {
-					$vkApi->editMessage("📛 Не удалось загрузить скриншот оценок.", $conversation_message_id, $object['peer_id']);
-				}
-				return false;
-			}
-			unlink($marks);
-
 			$lk = new LK($object['from_id']);
-			if($lk->auth() != 1 || ($marksLK = $lk->getOnlyMarks()) == null) {
-				$vkApi->editMessage("🎓 Ваши оценки:", $conversation_message_id, $object['peer_id'], [ 'attachment' => "doc${document['owner_id']}_${document['id']}", 'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marks\", \"update\": '.$conversation_message_id.' }"},"color":"secondary"}]],"inline":true}' ]);
-				return true; // Не авторизовался или нет оценок - дополнительной инфы не будет
-			}
-
-			if(($marksLK['well']+$marksLK['good']) < 1 || ($marksLK['not_bad']+$marksLK['bad']) < 1) { // Если одна из сумм чисел 0, то в процентном считать не будем
-				$vkApi->editMessage("🎓 Информация по оценкам на данный семестр:\n\n🚔 Количество пропусков: ${marksLK['pass']}\n☀️ Количество оценок (5/4/3/2): ${marksLK['well']}/${marksLK['good']}/${marksLK['not_bad']}/${marksLK['bad']}\n\n📷 Скриншот ваших оценок:", $conversation_message_id, $object['peer_id'], [ 'attachment' => "doc${document['owner_id']}_${document['id']}", 'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marks\", \"update\": '.$conversation_message_id.' }"},"color":"secondary"}]],"inline":true}' ]);
+			if($lk->auth() != 1) {
+				$vkApi->editMessage("", $conversation_message_id, $object['peer_id']);
 				return true;
 			}
 
-			$percent = [
-				round(($marksLK['well']+$marksLK['good'])/($marksLK['well']+$marksLK['good']+$marksLK['not_bad']+$marksLK['bad'])*100, 1),
-				round(($marksLK['not_bad']+$marksLK['bad'])/($marksLK['well']+$marksLK['good']+$marksLK['not_bad']+$marksLK['bad'])*100, 1)
-			];
+			$marksLK = $lk->getOnlyMarks();
+			if(($marksLK['well']+$marksLK['good']) < 1 || ($marksLK['not_bad']+$marksLK['bad']) < 1) { // Если одна из сумм чисел 0, то в процентном считать не будем
+				$text = "🎓 Информация по оценкам на данный семестр:\n\n🚔 Количество пропусков: ${marksLK['pass']}\n☀️ Количество оценок (5/4/3/2): ${marksLK['well']}/${marksLK['good']}/${marksLK['not_bad']}/${marksLK['bad']}.";
+			} else {
+				$percent = [
+					round(($marksLK['well']+$marksLK['good'])/($marksLK['well']+$marksLK['good']+$marksLK['not_bad']+$marksLK['bad'])*100, 1),
+					round(($marksLK['not_bad']+$marksLK['bad'])/($marksLK['well']+$marksLK['good']+$marksLK['not_bad']+$marksLK['bad'])*100, 1)
+				];
 
-			$vkApi->editMessage("🎓 Информация по оценкам на данный семестр:\n\n🚔 Количество пропусков: ${marksLK['pass']}\n☀️ Количество оценок (5/4/3/2): ${marksLK['well']}/${marksLK['good']}/${marksLK['not_bad']}/${marksLK['bad']}\n🧠 Процентное соотношение хороших и плохих оценок: ${percent[0]}% на ${percent[1]}%\n\n📷 Скриншот ваших оценок:", $conversation_message_id, $object['peer_id'], [ 'attachment' => "doc${document['owner_id']}_${document['id']}", 'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Обновить","payload":"{ \"command\": \"eval\", \"cmd\": \"/marks\", \"update\": '.$conversation_message_id.' }"},"color":"secondary"}]],"inline":true}' ]);
+				$text = "🎓 Информация по оценкам на данный семестр:\n\n🚔 Количество пропусков: ${marksLK['pass']}\n☀️ Количество оценок (5/4/3/2): ${marksLK['well']}/${marksLK['good']}/${marksLK['not_bad']}/${marksLK['bad']}\n🧠 Процентное соотношение хороших и плохих оценок: ${percent[0]}% на ${percent[1]}%.";
+			}
+
+			$vkApi->editMessage($text, $conversation_message_id, $object['peer_id'], [ 'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Получить скриншот оценок","payload":"{ \"command\": \"screen_marks\", \"for\": '.$object['from_id'].', \"update\": '.$conversation_message_id.' }"},"color":"positive"}]],"inline":true}' ]);
 			return true;
 		}
 

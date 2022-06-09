@@ -81,7 +81,9 @@
 
 		protected function getTeacher(int $group_id, string $date, string $name): string {
 			$schedule = R::getAll('SELECT * FROM `schedule_parse` WHERE `group_id` = ? AND `date` = ? AND `name` LIKE ?', [ $group_id, $date, "%$name%" ]);
-			if(count($schedule) < 2) {
+			if($schedule == null) {
+				return "Неизвестен";
+			} else if(count($schedule) < 2) {
 				return $schedule[0]['teacher'];
 			}
 

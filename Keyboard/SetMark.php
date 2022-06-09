@@ -78,7 +78,7 @@
 					'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "⚡️ Задача на установку отметки уже создана!" ])
 				]);
 
-				$vkApi->sendMessage("📚️ Выберите пары на которых хотите отметиться:", Marking::getKeyboardOrCarousel($type, $data, $object, 0, $payload['date']));
+				$vkApi->sendMessage("📚️ Выберите пары на которых хотите отметиться:", Marking::getKeyboardOrCarousel($type, $data, $object, 0, $payload['date']) + [ 'forward' => $vkApi->getForwardByCMId($object['peer_id'], $object['conversation_message_id']) ]);
 				$vkApi->get("messages.delete", ['peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']], 'delete_for_all' => 1]);
 
 				return true;
