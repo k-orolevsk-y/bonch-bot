@@ -408,7 +408,7 @@
 			$read_arr = json_decode($read['data'], true);
 
 			$files = $this->request("files_group_pr", [ 'page' => 1 ]);
-			if(str_contains($files, "Файлов пока нет.")) {
+			if(str_contains($files, "Файлов пока нет.") || empty($files)) {
 				return [];
 			}
 
