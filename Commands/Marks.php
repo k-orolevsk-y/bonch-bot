@@ -29,8 +29,8 @@
 
 			$user = R::findOne('users', 'WHERE `user_id` = ?', [ $object['from_id'] ]);
 			if($user == null) {
-				$vkApi->sendMessage("📛 У Вас не привязаны данные от ЛК.", [
-					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Привязать","payload":"{ \"command\": \"eval\", \"cmd\": \"/bind\" }"},"color":"secondary"}]],"inline":true}',
+				$vkApi->sendMessage("🚫 У Вас не привязаны данные от ЛК.", [
+					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Привязать ЛК","payload":"{ \"command\": \"eval\", \"cmd\": \"/bind\" }"},"color":"positive"}]],"inline":true}',
 					'peer_id' => $object['peer_id'],
 					'forward' => $forward
 				]);

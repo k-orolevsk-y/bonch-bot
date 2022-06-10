@@ -11,6 +11,8 @@
 					return new Order($api, $object, $payload);
 				case "schedule_teacher":
 					return new ScheduleTeacher($api, $object, $payload);
+				case "command_need_arguments":
+					return new CommandNeedArguments($api, $object, $payload);
 			}
 		}
 	}

@@ -11,6 +11,10 @@
 			$vkApi = $api->getVkApi();
 			$msg = explode(' ', $object['text']);
 
+			if($object['from_id'] == null) {
+				$object['from_id'] = $object['user_id'];
+			}
+
 			if($object['peer_id'] > 2000000000) {
 				$vkApi->sendMessage("❗️ Команда не работает в беседах.", [
 					'keyboard' => '{"buttons":[[{"action":{"type":"open_link","link":"https://vk.com/im?sel=-207206992","label":"Перейти в ЛС Бота","payload":""}}]],"inline":true}'
@@ -26,7 +30,7 @@
 
 			if($msg[1] == null) {
 				$vkApi->sendMessage("ℹ️ Вы уверены? Данные будут безвозвратно удалены.", [
-					'keyboard' => '{"buttons":[[{"action":{"type":"text","label":"Уверен(-а)","payload":"{ \"command\": \"eval\", \"cmd\": \"/unbind 1\" }"},"color":"negative"}]],"inline":true}'
+					'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"Уверен(-а)","payload":"{ \"command\": \"eval\", \"cmd\": \"/unbind 1\" }"},"color":"negative"}]],"inline":true}'
 				]);
 				return true;
 			}
@@ -41,7 +45,7 @@
 			R::trashAll(R::convertToBeans('messages_read', $messages_read));
 			R::trash($db);
 
-			$vkApi->sendMessage("✅ Данные были безвозвратно удалены.", [
+			$vkApi->editMessage("✅ Данные были безвозвратно удалены.", $object['conversation_message_id'], $object['peer_id'], [
 				'keyboard' => '{"buttons":[]}'
 			]);
 			return true;

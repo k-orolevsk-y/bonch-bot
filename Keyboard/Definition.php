@@ -61,7 +61,16 @@
 					return new GroupMembers($api, $object, $payload);
 				case "screen_marks":
 					return new ScreenMarks($api, $object, $payload);
+				case "not_button":
+					return $api->getVkApi()->get("messages.sendMessageEventAnswer", [
+						'peer_id' => $object['peer_id'],
+						'user_id' => $object['user_id'],
+						'event_id' => $object['event_id'],
+						'event_data' => json_encode([ 'type' => 'show_snackbar', 'text' => "✏️ Данная кнопка не выполняет никакого действия, прочитайте сообщение." ])
+					]);
 			}
+
+			return false;
 		}
 
 	}

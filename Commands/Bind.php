@@ -30,12 +30,19 @@
 				return true;
 			}
 
-			if($msg[2] == null) {
-				$vkApi->sendMessage("ℹ️ Правильное использование: /bind [логин] [пароль]");
+			$bonch_group_id = Data::GROUP_ID;
+			if($msg[1] == null) {
+				$api->commandNeedArguments("ℹ️ Ответьте на данное сообщение, указав [club$bonch_group_id|логин] от личного кабинета.", [ 'command' => '/bind' ]);
+				$vkApi->get('messages.delete', [ 'peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']] ]);
+
+				return false;
+			} elseif($msg[2] == null) {
+				$api->commandNeedArguments("ℹ️ Ответьте на данное сообщение, указав [club$bonch_group_id|пароль] от личного кабинета.", [ 'command' => $object['text'] ]);
 				$vkApi->get('messages.delete', [ 'peer_id' => $object['peer_id'], 'conversation_message_ids' => [$object['conversation_message_id']] ]);
 
 				return false;
 			}
+
 
 			$login = $msg[1];
 			$password = $msg[2];

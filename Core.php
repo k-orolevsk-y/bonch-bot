@@ -79,8 +79,6 @@
 				}
 
 				new DefinitionActions($api, $obj, $payload_reply_message);
-
-				$api->removeAction();
 				$api->end();
 			}
 

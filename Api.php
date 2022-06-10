@@ -57,7 +57,24 @@
 			return $num.' '.$after[ ($number%100>4 && $number%100<20)? 2: $cases[min($number%10, 5)] ];
 		}
 
+		public function commandNeedArguments(string $text, array $payload): bool {
+			if(!$payload['command']) {
+				return false;
+			}
+
+			$payload['action'] = 'command_need_arguments';
+			$this->createAction($payload);
+
+			$this->getVkApi()->sendMessage($text, [ 'payload' => json_encode($payload), 'keyboard' => '{"buttons":[[{"action":{"type":"callback","label":"✏️","payload":"{ \"command\": \"not_button\" } "},"color":"secondary"}]],"inline":true}' ]);
+			return true;
+		}
+
 		public function createAction(array $payload): bool {
+			$actions = R::getAll('SELECT * FROM `actions` WHERE `user_id` = ? AND `peer_id` = ?', [ $this->object['from_id'] ?? $this->object['user_id'], $this->object['peer_id'] ]);
+			if($actions != null) {
+				R::trashAll(R::convertToBeans('actions', $actions));
+			}
+
 			try {
 				$action = R::dispense('actions');
 				$action['user_id'] = $this->object['from_id'] ?? $this->object['user_id'];
