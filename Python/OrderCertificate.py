@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException
 
-webdriver_path = "/usr/lib/chromium-browser/chromedriver"
+webdriver_path = "/usr/local/bin/chromedriver"
 args = ujson.decode(sys.argv[1])
 
 need_args = ['login', 'pass', 'why', 'goal']

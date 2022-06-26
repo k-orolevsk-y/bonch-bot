@@ -6,6 +6,7 @@
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Data;
 	use Me\Korolevsky\BonchBot\WebLK;
+	use Me\Korolevsky\BonchBot\OpenSSL;
 	use Me\Korolevsky\BonchBot\Interfaces\Command;
 
 	class Bind implements Command {
@@ -82,7 +83,7 @@
 
 			$users = R::getAll('SELECT * FROM `users` WHERE `group_id` = ?', [ $group_id ]);
 			foreach($users as $user) {
-				$user_login = openssl_decrypt(hex2bin($user['login']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+				$user_login = OpenSSL::decrypt($user['login']);
 				if($login == $user_login) {
 					$vkApi->editMessage("🚫 Данный аккаунт ЛК уже привязан к другому пользователю!", $conversation_message_id, $object['peer_id']);
 					return false;
@@ -97,9 +98,9 @@
 			$db['user_id'] = $object['from_id'];
 			$db['group_id'] = $group_id;
 			$db['time'] = time();
-			$db['cookie'] = bin2hex(openssl_encrypt($cookie, 'AES-128-CBC', Data::ENCRYPT_KEY));
-			$db['login'] = bin2hex(openssl_encrypt($login, 'AES-128-CBC', Data::ENCRYPT_KEY));
-			$db['password'] = bin2hex(openssl_encrypt($password, 'AES-128-CBC', Data::ENCRYPT_KEY));
+			$db['cookie'] = OpenSSL::encrypt($cookie);
+			$db['login'] = OpenSSL::encrypt($login);
+			$db['password'] = OpenSSL::encrypt($password);
 			$db['data'] = json_encode($attempt);
 			$db['settings'] = json_encode(['type_marking' => 0, 'send_notifications' => 1, 'mailing' => 1, 'new_messages' => 1, 'schedule_from_lk' => 1, 'marks_notify' => 1]);
 			R::store($db);

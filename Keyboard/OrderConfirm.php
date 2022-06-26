@@ -3,6 +3,7 @@
 	namespace Me\Korolevsky\BonchBot\Keyboard;
 
 	use Me\Korolevsky\BonchBot\Data;
+	use Me\Korolevsky\BonchBot\OpenSSL;
 	use RedBeanPHP\R;
 	use Me\Korolevsky\BonchBot\Api;
 	use Me\Korolevsky\BonchBot\Interfaces\Keyboard;
@@ -36,8 +37,8 @@
 
 			$types = OrderCmd::getWhys();
 			$date_of_manufacture = $this->getFutureBusinessDay(3);
-			$login = openssl_decrypt(hex2bin($user['login']), 'AES-128-CBC', Data::ENCRYPT_KEY);
-			$pass = openssl_decrypt(hex2bin($user['password']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+			$login = OpenSSL::decrypt($user['login']);
+			$pass = OpenSSL::decrypt($user['password']);
 
 			$vkApi->editMessage("📑 Заказываем справку...", $object['conversation_message_id'], $object['peer_id']);
 			

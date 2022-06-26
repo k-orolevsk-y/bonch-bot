@@ -37,9 +37,14 @@
 			$this->api = $api;
 			$this->object = $object;
 
-			if($msg[1] == null && $object['reply_message'] == null) {
+			if($msg[1] == null) {
 				$vkApi->sendMessage("ℹ️  Правильное использование: /eval [код]\n\n❗️ При отсутствии return в коде, бот автоматически подставит return в начало кода.\nЕсли нет необходимости в возвращении результата, добавьте в конце `return -1;`");
 				return true;
+			} elseif($object['reply_message'] != null && $api->cM($msg[1], [ 'repeat', 'repeat;' ])) {
+				$object['text'] = $object['reply_message']->text;
+				$msg = explode(' ', str_replace("\n", " ", $object['text']));
+
+				$this->object = $object;
 			}
 
 			set_exception_handler(function($e) use ($vkApi, $api, $object) {

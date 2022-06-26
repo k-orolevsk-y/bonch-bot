@@ -24,7 +24,7 @@
 				return -1;
 			}
 
-			$request = self::request("profil", cookie: openssl_decrypt(hex2bin($user['cookie']), 'AES-128-CBC', Data::ENCRYPT_KEY) ?? "");
+			$request = self::request("profil", cookie: OpenSSL::decrypt($user['cookie']) ?? "");
 			if($request === BONCHBOT_LK_ERROR_TIMEOUT) {
 				return -2; // ЛК в канаве
 			} elseif($request === false) {
@@ -35,11 +35,11 @@
 					}
 				}
 
-				$user['cookie'] = bin2hex(openssl_encrypt($cookie, 'AES-128-CBC', Data::ENCRYPT_KEY));
+				$user['cookie'] = OpenSSL::encrypt($cookie);
 				R::store($user);
 			}
 
-			$this->cookie = openssl_decrypt(hex2bin($user['cookie']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+			$this->cookie = OpenSSL::decrypt($user['cookie']);
 			return 1;
 		}
 
@@ -49,8 +49,8 @@
 			}
 
 			$user = R::findOne('users', 'WHERE `user_id` = ?', [ $this->user_id ]);
-			$login = openssl_decrypt(hex2bin($user['login']), 'AES-128-CBC', Data::ENCRYPT_KEY);
-			$password = openssl_decrypt(hex2bin($user['password']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+			$login = OpenSSL::decrypt($user['login']);
+			$password = OpenSSL::decrypt($user['password']);
 
 			$ch = curl_init();
 			curl_setopt_array($ch, [ // Получаем от ЛК сформированные куки на главной странице, для создания их авторизованными...
@@ -310,7 +310,7 @@
 			$doc->loadHTML($messages);
 			$xpath = new DOMXPath($doc);
 
-			$table = $xpath->query('//*[@id="mytable"]/tbody/tr');
+				$table = $xpath->query('//*[@id="mytable"]/tbody/tr');
 			$response = [];
 
 			foreach($table as $tr) {

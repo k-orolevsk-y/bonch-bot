@@ -24,8 +24,8 @@
 				$user = R::findOne('users', 'WHERE `user_id` = ?', [ $user_id ]);
 				$this->user_id = $user_id;
 
-				$this->user_login = openssl_decrypt(hex2bin($user['login']), 'AES-128-CBC', Data::ENCRYPT_KEY);
-				$this->user_pass = openssl_decrypt(hex2bin($user['password']), 'AES-128-CBC', Data::ENCRYPT_KEY);
+				$this->user_login = OpenSSL::decrypt($user['login']);
+				$this->user_pass = OpenSSL::decrypt($user['password']);
 			}
 
 			$this->createChromeDriver();
